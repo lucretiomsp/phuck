@@ -14,6 +14,7 @@
 #include <string>
 #include <vector>
 #include <cstring>
+#include <algorithm>
 
 struct phuck
 {
