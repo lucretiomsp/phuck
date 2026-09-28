@@ -1,0 +1,85 @@
+name: build libphuck
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      chuck_ref:
+        description: "ChucK git ref (branch, tag or commit)"
+        default: "main"
+
+env:
+  CHUCK_REF: ${{ github.event.inputs.chuck_ref || 'main' }}
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04          # old glibc on purpose: runs on newer distros too
+            name: linux-x64
+            lib: build/libphuck.so
+            test: build/test_sine
+          - os: macos-14
+            name: macos-universal     # one dylib for Apple Silicon + Intel
+            lib: build/libphuck.dylib
+            test: build/test_sine
+            cmake_extra: '"-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64"'
+          - os: windows-2022
+            name: windows-x64
+            lib: build/Release/phuck.dll
+            test: build/Release/test_sine.exe
+    runs-on: ${{ matrix.os }}
+    name: ${{ matrix.name }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get ChucK source
+        uses: actions/checkout@v4
+        with:
+          repository: ccrma/chuck
+          ref: ${{ env.CHUCK_REF }}
+          path: chuck
+
+      - name: Linux deps
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libasound2-dev
+
+      - name: Configure
+        run: cmake -B build -DCHUCK_SRC="${{ github.workspace }}/chuck/src" -DCMAKE_BUILD_TYPE=Release -DPHUCK_TESTS=ON ${{ matrix.cmake_extra }}
+        shell: bash
+
+      - name: Build
+        run: cmake --build build --config Release --parallel
+
+      - name: Offline test (SinOsc freq control)
+        run: ${{ matrix.test }}
+        shell: bash
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: libphuck-${{ matrix.name }}
+          path: |
+            ${{ matrix.lib }}
+            phuck.h
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+      - name: Zip per platform
+        run: cd dist && for d in */; do (cd "$d" && zip -r "../${d%/}.zip" .); done
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.zip
