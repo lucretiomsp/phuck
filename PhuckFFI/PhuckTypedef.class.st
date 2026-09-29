@@ -46,8 +46,8 @@ PhuckTypedef class >> initialize [
 	int64_t := #int64.
 	bool := #Boolean.
 	uintptr_t := #'void *'.
-	phuck := Phuck.
-	phuck_t := Phuck.
+	phuck := PhuckVM.
+	phuck_t := PhuckVM.
 	phuck_req := PhuckReq.
 	phuck_req_t := PhuckReq
 ]
