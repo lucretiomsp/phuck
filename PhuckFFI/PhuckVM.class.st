@@ -45,7 +45,16 @@ Class {
 
 { #category : 'instance creation' }
 PhuckVM class >> new [
-	self error: 'PhuckVM is a singleton, use PhuckVM uniqueInstance'
+	self error: 'PhuckVM is a singleton, use PhuckVM uniqueInstance or PhuckVM offline'
+]
+
+{ #category : 'settings' }
+PhuckVM class >> offline [
+	"A VM without sound card, for tests and rendering. Protocol: instance creation."
+	^ self basicNew
+		initialize;
+		bootVM;
+		yourself
 ]
 
 { #category : 'initialization' }
@@ -58,9 +67,9 @@ PhuckVM class >> reset [
 
 { #category : 'instance creation' }
 PhuckVM class >> uniqueInstance [
-"The realtime VM: ChucK allows only one per process."
 	^ UniqueInstance ifNil: [
-		UniqueInstance := self new
+		UniqueInstance := self basicNew
+			initialize;
 			start;
 			yourself ]
 ]
