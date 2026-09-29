@@ -1,22 +1,35 @@
 "
-I am the Pharo-side facade to a *ChucK* virtual machine running in _libphuck_.
+I am the Pharo-side facade to the ChucK virtual machine running in libphuck.
 
-I own a Phuck handle and hide the raw LibPhuck calls: VM setup and parameters, starting and stopping audio, compiling code into shreds, setting and reading globals, events and console output.
+I am a singleton: use PhuckVM uniqueInstance (new is blocked). PhuckVM reset frees the C VM; the next uniqueInstance creates a fresh one.
 
-Use PhuckVM default for the single realtime VM (*ChucK*''s audio layer allows only one per process). Offline instances, driven block by block with render:, can be created for tests.
+I own a Phuck handle (slot vm) and hide the raw LibPhuck calls: VM parameters, init and start, audio, compiling code into shreds, globals, events and console output.
 
+Defaults:
+- C VM parameters, applied by setDefaults every time a new C VM is created (first use, after reset, after an image restart): sample rate 48000, 0 input channels, 2 output channels, VM kept alive with no shreds (VM_HALT 0).
+- Pharo side, set once in initialize: bufferFrames 256, used by startAudio.
+
+Parameters must be changed before init. Typical use:
+
+```language=Pharo
+	PhuckVM uniqueInstance
+		init;
+		start;
+		startAudio.
+```
 Rules inherited from the shim:
 - nothing calls back into Pharo: events and console are polled;
 - setters apply at the next audio block;
 - getters are asynchronous: request, wait until ready, read, free.
 
-After an image restart my handle is null: I recreate the VM on first use. Call release to stop audio and free the VM.
+Call release to stop audio and free the C VM
 "
 Class {
 	#name : 'PhuckVM',
 	#superclass : 'PhuckBaseObject',
 	#instVars : [
-		'vm'
+		'vm',
+		'bufferFrames'
 	],
 	#classVars : [
 		'UniqueInstance'
@@ -45,10 +58,11 @@ PhuckVM class >> uniqueInstance [
 ]
 
 { #category : 'initialization' }
-PhuckVM >> initialize [ 
+PhuckVM >> initialize [
 
-super initialize.
-self vm
+	super initialize.
+	bufferFrames := 256.
+	self vm
 ]
 
 { #category : 'accessing' }
@@ -78,6 +92,20 @@ PhuckVM >> paramInt: aKey put: anInteger [
 
 ]
 
+{ #category : 'running' }
+PhuckVM >> releaseVM [
+
+	handle ifNil: [ ^ self ].
+	self stopAudio.
+	self lib phuck_free: handle.
+	handle := nil
+]
+
+{ #category : 'accessing' }
+PhuckVM >> removeShred: anId [  self lib phuck_remove_shredCk: self handle shredId: anId
+
+]
+
 { #category : 'accessing' }
 PhuckVM >> sampleRate: anInteger [     
 self paramInt: 'SAMPLE_RATE' put: anInteger
@@ -90,6 +118,21 @@ PhuckVM >> setDefaults [
 		inputChannels: 0;
 		outputChannels: 2;
 		keepAlive
+]
+
+{ #category : 'running' }
+PhuckVM >> startAudio [
+	self startAudio: bufferFrames
+]
+
+{ #category : 'running' }
+PhuckVM >> startAudio: frames [
+	(self lib phuck_audio_startCk: self handle bufferFrames: frames) = 1
+		ifFalse: [ self error: 'audio start failed' ]
+]
+
+{ #category : 'running' }
+PhuckVM >> stopAudio [  self lib phuck_audio_stop: self handle
 ]
 
 { #category : 'accessing' }
