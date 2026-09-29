@@ -28,15 +28,19 @@ Class {
 	#name : 'PhuckVM',
 	#superclass : 'PhuckBaseObject',
 	#instVars : [
-		'vm',
-		'bufferFrames'
+		'library',
+		'chuck',
+		'sampleRate',
+		'bufferFrames',
+		'audioRunning',
+		'globals'
 	],
 	#classVars : [
 		'UniqueInstance'
 	],
-	#category : 'PhuckFFI-Base',
+	#category : 'PhuckFFI-Core',
 	#package : 'PhuckFFI',
-	#tag : 'Base'
+	#tag : 'Core'
 }
 
 { #category : 'instance creation' }
@@ -46,28 +50,92 @@ PhuckVM class >> new [
 
 { #category : 'initialization' }
 PhuckVM class >> reset [
-"reset frees the C VM and lets the next uniqueInstance create a fresh one: useful between tests and after an image restart. Offline rendering then goes through the same instance (stop audio first, then phuck_run)."
-	UniqueInstance ifNotNil: [ :vm | vm release ].
+	"reset frees the C VM and lets the next uniqueInstance create a fresh one: useful between tests and after an image restart. Offline rendering then goes through the same instance (stop audio first, then phuck_run)."
+
+	UniqueInstance ifNotNil: [ :vm | vm releaseVM ].
 	UniqueInstance := nil
 ]
 
 { #category : 'instance creation' }
 PhuckVM class >> uniqueInstance [
-	^ UniqueInstance ifNil: [ UniqueInstance := self basicNew initialize ]
+"The realtime VM: ChucK allows only one per process."
+	^ UniqueInstance ifNil: [
+		UniqueInstance := self new
+			start;
+			yourself ]
+]
 
+{ #category : 'accessing' }
+PhuckVM >> bootVM [
+	"VM only, no sound card: enough for offline rendering and tests."
+	self isRunning ifTrue: [ ^ self ].
+	chuck := library phuck_new.
+	library
+		phuck_set_param_intCk: chuck key: 'SAMPLE_RATE' v: sampleRate;
+		phuck_set_param_intCk: chuck key: 'INPUT_CHANNELS' v: 0;
+		phuck_set_param_intCk: chuck key: 'OUTPUT_CHANNELS' v: 2;
+		phuck_set_param_intCk: chuck key: 'VM_HALT' v: 0.
+	(library phuck_init: chuck) = 1 ifFalse: [ ^ self failBoot: 'ChucK init failed' ].
+	(library phuck_start: chuck) = 1 ifFalse: [ ^ self failBoot: 'ChucK start failed' ]
+]
+
+{ #category : 'accessing' }
+PhuckVM >> bufferFrames: anInteger [
+	self isRunning ifTrue: [ ^ self error: 'Set the buffer size before start' ].
+	bufferFrames := anInteger
+]
+
+{ #category : 'running' }
+PhuckVM >> compile: aString [
+	"Spork aString, answer the shred id. Protocol: running."
+	| id |
+	self ensureRunning.
+	id := library phuck_compile_codeCk: chuck code: aString args: ''.
+	id = 0 ifTrue: [ ^ self error: 'ChucK compile error: ' , self output ].
+	self registerGlobalsIn: aString.
+	^ id
+]
+
+{ #category : 'testing' }
+PhuckVM >> ensureRunning [
+	self isRunning ifFalse: [ self error: 'PhuckVM is not running' ]
+]
+
+{ #category : 'accessing' }
+PhuckVM >> failBoot: aString [
+	library phuck_free: chuck.
+	chuck := nil.
+	^ self error: aString
+]
+
+{ #category : 'parameters' }
+PhuckVM >> globalTypeOf: aString ifAbsent: aBlock [
+	^ globals at: aString asString ifAbsent: aBlock
 ]
 
 { #category : 'initialization' }
 PhuckVM >> initialize [
-
 	super initialize.
+	library := LibPhuck uniqueInstance.
+	sampleRate := 48000.
 	bufferFrames := 256.
-	self vm
+	audioRunning := false.
+	globals := Dictionary new
 ]
 
 { #category : 'accessing' }
 PhuckVM >> inputChannels: anInteger [  
 self paramInt: 'INPUT_CHANNELS' put: anInteger
+]
+
+{ #category : 'testing' }
+PhuckVM >> isAudioRunning [
+	^ audioRunning
+]
+
+{ #category : 'testing' }
+PhuckVM >> isRunning [
+	^ chuck notNil
 ]
 
 { #category : 'accessing' }
@@ -92,6 +160,16 @@ PhuckVM >> paramInt: aKey put: anInteger [
 
 ]
 
+{ #category : 'parameters' }
+PhuckVM >> registerGlobalsIn: aString [
+	| matcher |
+	matcher := 'global\s+(int|float|string)\s+(\w+)' asRegex.
+	matcher matchesIn: aString do: [ :each |
+		globals
+			at: (matcher subexpression: 3)
+			put: (matcher subexpression: 2) asSymbol ]
+]
+
 { #category : 'running' }
 PhuckVM >> releaseVM [
 
@@ -106,9 +184,17 @@ PhuckVM >> removeShred: anId [  self lib phuck_remove_shredCk: self handle shred
 
 ]
 
-{ #category : 'accessing' }
-PhuckVM >> sampleRate: anInteger [     
-self paramInt: 'SAMPLE_RATE' put: anInteger
+{ #category : 'running' }
+PhuckVM >> run: aString [
+	^ PhuckShred new
+		vm: self id: (self compile: aString) source: aString;
+		yourself
+]
+
+{ #category : 'initialization' }
+PhuckVM >> sampleRate: anInteger [
+	self isRunning ifTrue: [ ^ self error: 'Set the sample rate before start' ].
+	sampleRate := anInteger
 ]
 
 { #category : 'defaults' }
@@ -120,9 +206,48 @@ PhuckVM >> setDefaults [
 		keepAlive
 ]
 
-{ #category : 'running' }
+{ #category : 'parameters' }
+PhuckVM >> setFloat: aNumber parameter: aString [
+	library phuck_set_floatCk: chuck name: aString asString v: aNumber asFloat
+]
+
+{ #category : 'parameters' }
+PhuckVM >> setInt: aNumber parameter: aString [
+	library phuck_set_intCk: chuck name: aString asString v: aNumber asInteger
+]
+
+{ #category : 'parameters' }
+PhuckVM >> setString: aString parameter: aName [
+	library phuck_set_stringCk: chuck name: aName asString v: aString asString
+]
+
+{ #category : 'parameters' }
+PhuckVM >> setValue: aValue parameter: aString [
+	"Dispatch on the declared ChucK type, or on the value's class if the global is unknown."
+	| type |
+	self ensureRunning.
+	type := self globalTypeOf: aString ifAbsent: [ aValue phuckGlobalType ].
+	type = #float ifTrue: [ ^ self setFloat: aValue parameter: aString ].
+	type = #int ifTrue: [ ^ self setInt: aValue parameter: aString ].
+	type = #string ifTrue: [ ^ self setString: aValue parameter: aString ].
+	self error: 'Unsupported ChucK global type: ' , type
+]
+
+{ #category : 'accessing' }
+PhuckVM >> start [
+	"Boot the VM and open the sound card."
+	self
+		bootVM;
+		startAudio
+]
+
+{ #category : 'accessing' }
 PhuckVM >> startAudio [
-	self startAudio: bufferFrames
+	self ensureRunning.
+	audioRunning ifTrue: [ ^ self ].
+	(library phuck_audio_startCk: chuck bufferFrames: bufferFrames) = 1
+		ifFalse: [ ^ self error: 'Could not open the audio device' ].
+	audioRunning := true
 ]
 
 { #category : 'running' }
@@ -131,14 +256,9 @@ PhuckVM >> startAudio: frames [
 		ifFalse: [ self error: 'audio start failed' ]
 ]
 
-{ #category : 'running' }
-PhuckVM >> stopAudio [  self lib phuck_audio_stop: self handle
-]
-
 { #category : 'accessing' }
-PhuckVM >> vm [ 
-(vm isNil or: [ vm isNull ]) ifTrue: [
-		vm := self lib phuck_new.
-		self setDefaults ].
-	^ vm
+PhuckVM >> stopAudio [
+	audioRunning ifFalse: [ ^ self ].
+	library phuck_audio_stop: chuck.
+	audioRunning := false
 ]

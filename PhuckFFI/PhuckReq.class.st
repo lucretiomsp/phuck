@@ -33,7 +33,7 @@ Generated code: do not add behaviour here, it is lost on regeneration.
 Class {
 	#name : 'PhuckReq',
 	#superclass : 'PhuckBaseObject',
-	#category : 'PhuckFFI-Base',
+	#category : 'PhuckFFI-Core',
 	#package : 'PhuckFFI',
-	#tag : 'Base'
+	#tag : 'Core'
 }

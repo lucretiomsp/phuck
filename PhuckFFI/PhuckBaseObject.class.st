@@ -15,7 +15,7 @@ Class {
 	#pools : [
 		'PhuckTypedef'
 	],
-	#category : 'PhuckFFI-Base',
+	#category : 'PhuckFFI-Core',
 	#package : 'PhuckFFI',
-	#tag : 'Base'
+	#tag : 'Core'
 }
