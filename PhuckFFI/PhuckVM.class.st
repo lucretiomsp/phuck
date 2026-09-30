@@ -193,6 +193,17 @@ PhuckVM >> releaseVM [
 ]
 
 { #category : 'accessing' }
+PhuckVM >> removeLastShred [
+	"Like the minus button in miniAudicle: remove the most recent living shred.
+	Call it again to keep removing, until no shred is left (then ChucK prints 'no shreds to remove').
+	16rFFFFFFFF is ChucK's CK_NO_VALUE, which the VM reads as 'the last shred'.
+
+	Limit: the removal is queued and libphuck does not return which id ChucK removed, so a PhuckShred removed this way still answers false to isRemoved. Calling remove on it later is harmless: ChucK only prints 'no shred with id'."
+	self ensureRunning.
+	library phuck_remove_shredCk: chuck shredId: 16rFFFFFFFF
+]
+
+{ #category : 'accessing' }
 PhuckVM >> removeShred: anId [
 	self ensureRunning.
 	^ (library phuck_remove_shredCk: chuck shredId: anId) = 1
