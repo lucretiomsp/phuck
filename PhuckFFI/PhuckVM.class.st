@@ -48,7 +48,7 @@ PhuckVM class >> new [
 	self error: 'PhuckVM is a singleton, use PhuckVM uniqueInstance or PhuckVM offline'
 ]
 
-{ #category : 'settings' }
+{ #category : 'instance creation' }
 PhuckVM class >> offline [
 	"A VM without sound card, for tests and rendering. Protocol: instance creation."
 	^ self basicNew
@@ -152,9 +152,14 @@ PhuckVM >> keepAlive [
 self paramInt: 'VM_HALT' put: 0
 ]
 
-{ #category : 'accessing' }
-PhuckVM >> lib [
-	^ LibPhuck uniqueInstance
+{ #category : 'logging' }
+PhuckVM >> output [
+	"Drain chout / cherr."
+	| buffer size |
+	self ensureRunning.
+	buffer := ByteArray new: 4096.
+	size := library phuck_read_outputCk: chuck buf: buffer cap: buffer size.
+	^ (buffer copyFrom: 1 to: size) utf8Decoded
 ]
 
 { #category : 'accessing' }
@@ -164,9 +169,8 @@ self paramInt: 'OUTPUT_CHANNELS' put: anInteger
 
 { #category : 'accessing' }
 PhuckVM >> paramInt: aKey put: anInteger [
-	(self lib phuck_set_param_intCk: self handle key: aKey v: anInteger) = 1
+	(library phuck_set_param_intCk: chuck key: aKey v: anInteger) = 1
 		ifFalse: [ self error: 'cannot set ' , aKey ]
-
 ]
 
 { #category : 'parameters' }
@@ -179,18 +183,19 @@ PhuckVM >> registerGlobalsIn: aString [
 			put: (matcher subexpression: 2) asSymbol ]
 ]
 
-{ #category : 'running' }
+{ #category : 'accessing' }
 PhuckVM >> releaseVM [
-
-	handle ifNil: [ ^ self ].
+	chuck ifNil: [ ^ self ].
 	self stopAudio.
-	self lib phuck_free: handle.
-	handle := nil
+	library phuck_free: chuck.
+	chuck := nil.
+	UniqueInstance == self ifTrue: [ UniqueInstance := nil ]
 ]
 
 { #category : 'accessing' }
-PhuckVM >> removeShred: anId [  self lib phuck_remove_shredCk: self handle shredId: anId
-
+PhuckVM >> removeShred: anId [
+	self ensureRunning.
+	^ (library phuck_remove_shredCk: chuck shredId: anId) = 1
 ]
 
 { #category : 'running' }
@@ -257,12 +262,6 @@ PhuckVM >> startAudio [
 	(library phuck_audio_startCk: chuck bufferFrames: bufferFrames) = 1
 		ifFalse: [ ^ self error: 'Could not open the audio device' ].
 	audioRunning := true
-]
-
-{ #category : 'running' }
-PhuckVM >> startAudio: frames [
-	(self lib phuck_audio_startCk: self handle bufferFrames: frames) = 1
-		ifFalse: [ self error: 'audio start failed' ]
 ]
 
 { #category : 'accessing' }
