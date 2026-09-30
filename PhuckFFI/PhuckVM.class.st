@@ -183,7 +183,7 @@ PhuckVM >> registerGlobalsIn: aString [
 			put: (matcher subexpression: 2) asSymbol ]
 ]
 
-{ #category : 'accessing' }
+{ #category : 'running' }
 PhuckVM >> releaseVM [
 	chuck ifNil: [ ^ self ].
 	self stopAudio.
@@ -192,7 +192,7 @@ PhuckVM >> releaseVM [
 	UniqueInstance == self ifTrue: [ UniqueInstance := nil ]
 ]
 
-{ #category : 'accessing' }
+{ #category : 'removing' }
 PhuckVM >> removeLastShred [
 	"Like the minus button in miniAudicle: remove the most recent living shred.
 	Call it again to keep removing, until no shred is left (then ChucK prints 'no shreds to remove').
@@ -203,7 +203,7 @@ PhuckVM >> removeLastShred [
 	library phuck_remove_shredCk: chuck shredId: 16rFFFFFFFF
 ]
 
-{ #category : 'accessing' }
+{ #category : 'removing' }
 PhuckVM >> removeShred: anId [
 	self ensureRunning.
 	^ (library phuck_remove_shredCk: chuck shredId: anId) = 1
@@ -266,7 +266,7 @@ PhuckVM >> start [
 		startAudio
 ]
 
-{ #category : 'accessing' }
+{ #category : 'running' }
 PhuckVM >> startAudio [
 	self ensureRunning.
 	audioRunning ifTrue: [ ^ self ].
@@ -275,7 +275,7 @@ PhuckVM >> startAudio [
 	audioRunning := true
 ]
 
-{ #category : 'accessing' }
+{ #category : 'running' }
 PhuckVM >> stopAudio [
 	audioRunning ifFalse: [ ^ self ].
 	library phuck_audio_stop: chuck.
