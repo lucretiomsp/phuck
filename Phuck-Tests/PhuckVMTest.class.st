@@ -39,6 +39,11 @@ PhuckVMTest >> testChuckIsPhuckPointer [
 ]
 
 { #category : 'tests' }
+PhuckVMTest >> testCompileErrorSignals [
+	self should: [ vm run: 'this is not chuck' ] raise: Error
+]
+
+{ #category : 'tests' }
 PhuckVMTest >> testNewIsBlocked [
 	self should: [ PhuckVM new ] raise: Error
 ]
@@ -47,4 +52,53 @@ PhuckVMTest >> testNewIsBlocked [
 PhuckVMTest >> testOfflineIsRunningWithoutAudio [
 	self assert: vm isRunning.
 	self deny: vm isAudioRunning
+]
+
+{ #category : 'tests' }
+PhuckVMTest >> testReleaseVM [
+	vm releaseVM.
+	self deny: vm isRunning
+]
+
+{ #category : 'tests' }
+PhuckVMTest >> testReleaseVMTwiceIsHarmless [
+	vm
+		releaseVM;
+		releaseVM.
+	self deny: vm isRunning
+]
+
+{ #category : 'tests' }
+PhuckVMTest >> testRunOnReleasedVMSignals [
+	vm releaseVM.
+	self should: [ vm run: self sineCode ] raise: Error
+]
+
+{ #category : 'tests' }
+PhuckVMTest >> testRunRegistersGlobalTypes [
+	vm run: self sineCode.
+	self
+		assert: (vm globalTypeOf: 'freq' ifAbsent: [ nil ])
+		equals: #float
+]
+
+{ #category : 'tests' }
+PhuckVMTest >> testRunTwiceGivesDifferentIds [
+	| first second |
+	first := vm run: self sineCode.
+	second := vm run: self sineCode.
+	self deny: first id equals: second id
+]
+
+{ #category : 'tests' }
+PhuckVMTest >> testSetValueDoesNotFail [
+
+	vm run: self sineCode.
+	vm setValue: 440 parameter: 'freq'
+]
+
+{ #category : 'tests' }
+PhuckVMTest >> testSetValueOnReleasedVMSignals [
+	vm releaseVM.
+	self should: [ vm setValue: 440 parameter: 'freq' ] raise: Error
 ]
