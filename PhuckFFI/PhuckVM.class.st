@@ -26,7 +26,7 @@ Call release to stop audio and free the C VM
 "
 Class {
 	#name : 'PhuckVM',
-	#superclass : 'PhuckBaseObject',
+	#superclass : 'Object',
 	#instVars : [
 		'library',
 		'chuck',

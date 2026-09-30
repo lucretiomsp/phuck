@@ -246,16 +246,14 @@ LibPhuck >> runner [
 
 { #category : 'accessing - platform' }
 LibPhuck >> unix64LibraryName [
-
 	^ FFIUnix64LibraryFinder new
-		userPaths: #('./CIG/lib');
+		userPaths: { (FileLocator imageDirectory / 'phuckLibraries') fullName };
 		findLibrary: 'libphuck.so'
 ]
 
 { #category : 'accessing - platform' }
 LibPhuck >> win32LibraryName [
-
 	^ FFIWindowsLibraryFinder new
-		userPaths: #('./CIG/lib');
+		userPaths: { (FileLocator imageDirectory / 'phuckLibraries') fullName };
 		findLibrary: 'phuck.dll'
 ]
