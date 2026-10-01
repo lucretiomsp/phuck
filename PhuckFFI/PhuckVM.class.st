@@ -299,3 +299,10 @@ PhuckVM >> stopAudio [
 	self isRunning ifTrue: [ library phuck_audio_stop: chuck ].
 	audioRunning := false
 ]
+
+{ #category : 'API - changes' }
+PhuckVM >> trig: aString for: aDurationInSeconds [
+	[ self setValue: 1 parameter: aString.
+	(Delay forSeconds: aDurationInSeconds) wait.
+	self setValue: 0 parameter: aString ] forkAt: Processor timingPriority
+]
