@@ -33,7 +33,8 @@ Class {
 		'sampleRate',
 		'bufferFrames',
 		'audioRunning',
-		'globals'
+		'globals',
+		'session'
 	],
 	#classVars : [
 		'UniqueInstance'
@@ -42,6 +43,16 @@ Class {
 	#package : 'PhuckFFI',
 	#tag : 'Core'
 }
+
+{ #category : 'system startup' }
+PhuckVM class >> hutDown: quitting [
+	quitting ifTrue: [ self reset ]
+]
+
+{ #category : 'initialization' }
+PhuckVM class >> initialize [
+	SessionManager default registerUserClassNamed: self name
+]
 
 { #category : 'instance creation' }
 PhuckVM class >> new [
@@ -65,13 +76,18 @@ PhuckVM class >> reset [
 	UniqueInstance := nil
 ]
 
+{ #category : 'system startup' }
+PhuckVM class >> startUp: resuming [
+	resuming ifTrue: [ UniqueInstance := nil ]
+]
+
 { #category : 'instance creation' }
 PhuckVM class >> uniqueInstance [
 	^ UniqueInstance ifNil: [
-		UniqueInstance := self basicNew
-			initialize;
-			start;
-			yourself ]
+		| vm |
+		vm := self basicNew initialize.
+		[ vm start ] ifCurtailed: [ vm releaseVM ].
+		UniqueInstance := vm ]
 ]
 
 { #category : 'accessing' }
@@ -79,6 +95,7 @@ PhuckVM >> bootVM [
 	"VM only, no sound card: enough for offline rendering and tests."
 	self isRunning ifTrue: [ ^ self ].
 	chuck := library phuck_new.
+		session := Smalltalk session.
 	library
 		phuck_set_param_intCk: chuck key: 'SAMPLE_RATE' v: sampleRate;
 		phuck_set_param_intCk: chuck key: 'INPUT_CHANNELS' v: 0;
@@ -144,7 +161,7 @@ PhuckVM >> isAudioRunning [
 
 { #category : 'testing' }
 PhuckVM >> isRunning [
-	^ chuck notNil
+	^ chuck notNil and: [ session == Smalltalk session ]
 ]
 
 { #category : 'accessing' }
@@ -183,12 +200,13 @@ PhuckVM >> registerGlobalsIn: aString [
 			put: (matcher subexpression: 2) asSymbol ]
 ]
 
-{ #category : 'running' }
+{ #category : 'accessing' }
 PhuckVM >> releaseVM [
-	chuck ifNil: [ ^ self ].
-	self stopAudio.
-	library phuck_free: chuck.
+	self isRunning ifTrue: [
+		self stopAudio.
+		library phuck_free: chuck ].
 	chuck := nil.
+	audioRunning := false.
 	UniqueInstance == self ifTrue: [ UniqueInstance := nil ]
 ]
 
@@ -275,9 +293,9 @@ PhuckVM >> startAudio [
 	audioRunning := true
 ]
 
-{ #category : 'running' }
+{ #category : 'accessing' }
 PhuckVM >> stopAudio [
 	audioRunning ifFalse: [ ^ self ].
-	library phuck_audio_stop: chuck.
+	self isRunning ifTrue: [ library phuck_audio_stop: chuck ].
 	audioRunning := false
 ]
