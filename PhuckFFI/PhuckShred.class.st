@@ -27,6 +27,12 @@ Class {
 }
 
 { #category : 'accessing' }
+PhuckShred >> globals [ 
+
+^ vm globalsIn: source.
+]
+
+{ #category : 'accessing' }
 PhuckShred >> id [ 
 ^ id
 ]

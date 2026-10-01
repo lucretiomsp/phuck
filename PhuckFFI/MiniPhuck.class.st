@@ -18,7 +18,7 @@ MiniPhuck class >> code [
 0 => global float blowGate;      0.5 => global float blowNote;
 0 => global float clarinetGate;  0.5 => global float clarinetNote;
 0 => global float moogGate;      0.5 => global float moogNote;
-0 => global float shakeGate;     0.5 => global float shakeNote;
+0 => global float shakerGate;     0.5 => global float shakerNote;
 0 => global float barGate;       0.5 => global float barNote;
 
 // mixer, so seven voices don''t clip
@@ -31,7 +31,7 @@ Brass brass => master;
 BlowBotl blow => master;
 Clarinet clarinet => master;
 Moog moog => master;
-Shakers shake => master;
+Shakers shaker => master;
 ModalBar bar => master;
 
  
@@ -48,7 +48,7 @@ while (samp => now)
     voice(blow,     blowNote,     blowGate);
     voice(clarinet, clarinetNote, clarinetGate);
     voice(moog,     moogNote,     moogGate);
-    voice(shake,    shakeNote,    shakeGate);
+    voice(shaker,    shakerNote,    shakerGate);
     voice(bar,      barNote,      barGate);
 }'
 ]

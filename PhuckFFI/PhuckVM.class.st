@@ -139,6 +139,24 @@ PhuckVM >> globalTypeOf: aString ifAbsent: aBlock [
 	^ globals at: aString asString ifAbsent: aBlock
 ]
 
+{ #category : 'accessing' }
+PhuckVM >> globals [
+	^ globals
+]
+
+{ #category : 'accessing' }
+PhuckVM >> globalsIn: aString [
+	"Answer name -> type for the globals declared in aString."
+	| result matcher |
+	result := Dictionary new.
+	matcher := 'global\s+(int|float|string)\s+(\w+)' asRegex.
+	matcher matchesIn: aString do: [ :each |
+		result
+			at: (matcher subexpression: 3)
+			put: (matcher subexpression: 2) asSymbol ].
+	^ result
+]
+
 { #category : 'initialization' }
 PhuckVM >> initialize [
 	super initialize.
@@ -190,14 +208,9 @@ PhuckVM >> paramInt: aKey put: anInteger [
 		ifFalse: [ self error: 'cannot set ' , aKey ]
 ]
 
-{ #category : 'parameters' }
+{ #category : 'helpers' }
 PhuckVM >> registerGlobalsIn: aString [
-	| matcher |
-	matcher := 'global\s+(int|float|string)\s+(\w+)' asRegex.
-	matcher matchesIn: aString do: [ :each |
-		globals
-			at: (matcher subexpression: 3)
-			put: (matcher subexpression: 2) asSymbol ]
+	globals addAll: (self globalsIn: aString)
 ]
 
 { #category : 'accessing' }
@@ -298,6 +311,15 @@ PhuckVM >> stopAudio [
 	audioRunning ifFalse: [ ^ self ].
 	self isRunning ifTrue: [ library phuck_audio_stop: chuck ].
 	audioRunning := false
+]
+
+{ #category : 'logging' }
+PhuckVM >> traceAllParams [
+	"show in transcript alla vailable parameters for this VM"
+
+
+			Transcript open;clear.
+			self globals keys sorted do: [ :k| k traceCr ].  
 ]
 
 { #category : 'API - changes' }
