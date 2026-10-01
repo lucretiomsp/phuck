@@ -7,7 +7,7 @@ Run [ChucK](https://chuck.stanford.edu/) inside Pharo: compile shreds, set and g
 **FFI bindings generated using [Pharo-CIG](https://github.com/pharo-cig/pharo-cig)**
 
 ## Simplest usage
-```language=Pharo
+```smalltalk
 "Boot ChucK and open the sound card"
 ck := PhuckVM uniqueInstance.
 
