@@ -10,6 +10,109 @@ Class {
 }
 
 { #category : 'code generation' }
+MiniPhuck class >> acidCode [
+
+	^ '// Acid: TB-303 style, saw/square, resonant LPF with AR envelope, cubic distortion
+48    => global float acidNote;
+0     => global float acidGate;
+0.6   => global float acidLevel;
+0.3   => global float acidCutoff;      // normalized 0.2 .. 1
+4.5   => global float acidResonance;   // Q 1 .. 7
+0.64  => global float acidEnvMod;      // 0.1 .. 1
+0.282 => global float acidDecay;       // filter env decay, seconds
+0     => global float acidTuning;      // Hz, -100 .. 100
+0     => global float acidWaveform;    // 0 saw, 1 square
+
+class AcidCubic extends Chugen
+{
+    fun float tick(float in)
+    {
+        Math.max(-1.0, Math.min(1.0, in)) => float x;
+        return x - (x * x * x) / 3.0;
+    }
+}
+
+SawOsc saw => Gain osc;
+SqrOsc sqr => osc;
+osc => ADSR ampEnv => LPF filt => Gain comp => AcidCubic dist => Gain out => dac;
+ampEnv.set(1::ms, 200::ms, 0.0, 200::ms);
+
+Step one => ADSR filterEnv => blackhole;
+1.0 => one.next;
+
+0 => float lastGate;
+while (samp => now)
+{
+    Std.mtof(acidNote) + acidTuning => float f;
+    f => saw.freq;
+    f => sqr.freq;
+    if (acidWaveform > 0.5) { 0.0 => saw.gain; 0.25 => sqr.gain; }
+    else                    { 0.25 => saw.gain; 0.0 => sqr.gain; }
+
+    // same mapping as Faust korg35LPF: normFreq 0..1 -> 20 Hz .. 20 kHz
+    filterEnv.last() * (1.0 - acidCutoff) * acidEnvMod + acidCutoff => float n;
+    Math.min(1.0, n) => n;
+    Math.min(18000.0, 2.0 * Math.pow(10.0, 3.0 * n + 1.0)) => filt.freq;
+    acidResonance => filt.Q;
+    1.0 / (0.5 + acidCutoff) => comp.gain;
+    acidLevel => out.gain;
+
+    if (acidGate != lastGate)
+    {
+        if (acidGate > 0)
+        {
+            filterEnv.set(1::ms, acidDecay::second, 0.0, acidDecay::second);
+            ampEnv.keyOn();
+            filterEnv.keyOn();
+        }
+        acidGate => lastGate;
+    }
+}'
+]
+
+{ #category : 'code generation' }
+MiniPhuck class >> hooverCode [
+
+	^ '// Hoover: 2 saws + saw an octave up + tri an octave down, pitch envelope
+60  => global float hooverNote;
+0   => global float hooverGate;
+0.3 => global float hooverLevel;
+
+SawOsc s1 => Gain mix;
+SawOsc s2 => mix;
+SawOsc s3 => mix;
+TriOsc t1 => mix;
+0.3 => s2.gain;  0.3 => s3.gain;  0.3 => t1.gain;
+
+mix => ADSR ampEnv => Gain out => dac;
+ampEnv.set(1::ms, 200::ms, 0.5, 350::ms);
+
+// pitch envelope as a control signal
+Step one => ADSR pitchEnv => blackhole;
+1.0 => one.next;
+pitchEnv.set(1::ms, 1::second, 0.0, 600::ms);
+126.0 => float pitchEnvAmt;
+
+0 => float lastGate;
+while (samp => now)
+{
+    Std.mtof(hooverNote) + pitchEnv.last() * pitchEnvAmt => float f;
+    f         => s1.freq;
+    f + 3     => s2.freq;
+    f * 2 + 3 => s3.freq;
+    f * 0.5   => t1.freq;
+    hooverLevel => out.gain;
+
+    if (hooverGate != lastGate)
+    {
+        if (hooverGate > 0) { ampEnv.keyOn();  pitchEnv.keyOn(); }
+        else                { ampEnv.keyOff(); pitchEnv.keyOff(); }
+        hooverGate => lastGate;
+    }
+}'
+]
+
+{ #category : 'code generation' }
 MiniPhuck class >> justTubeBell [
 
 ^ '0 => global float bellGate;
@@ -30,46 +133,164 @@ while (samp => now)
 ]
 
 { #category : 'code generation' }
+MiniPhuck class >> kick99Code [
+
+	^ '// Kick99: 909 style kick (sine body with pitch sweep, noise click, soft clip)
+33   => global float kick99Note;       // base pitch, 33 = 55 Hz
+0    => global float kick99Gate;
+0.8  => global float kick99Level;
+0.4  => global float kick99Decay;      // body decay, seconds
+150  => global float kick99PitchAmt;   // sweep depth in Hz
+0.03 => global float kick99PitchDecay; // sweep time, seconds
+0.3  => global float kick99Click;      // click level
+
+class Kick99Clip extends Chugen
+{
+    fun float tick(float in)
+    {
+        Math.max(-1.0, Math.min(1.0, in)) => float x;
+        return 1.5 * (x - (x * x * x) / 3.0);
+    }
+}
+
+SinOsc body => Gain bodyAmp => Kick99Clip clip => Gain out => dac;
+Noise noise => HPF clickHp => ADSR clickEnv => Gain clickAmp => out;
+3000 => clickHp.freq;
+clickEnv.set(0.5::ms, 6::ms, 0.0, 1::ms);
+
+second / samp => float sr;
+0.0 => float pEnv;  0.0 => float aEnv;
+0.0 => float pCoef; 0.0 => float aCoef;
+
+0 => float lastGate;
+while (samp => now)
+{
+    if (kick99Gate != lastGate)
+    {
+        if (kick99Gate > 0)
+        {
+            Math.exp(-1.0 / (kick99PitchDecay * sr)) => pCoef;
+            Math.exp(-1.0 / (kick99Decay * sr))      => aCoef;
+            1.0 => pEnv;  1.0 => aEnv;
+            0.0 => body.phase;
+            clickEnv.keyOn();
+        }
+        kick99Gate => lastGate;
+    }
+
+    Std.mtof(kick99Note) + kick99PitchAmt * pEnv => body.freq;
+    aEnv * 1.5   => bodyAmp.gain;
+    kick99Click  => clickAmp.gain;
+    kick99Level  => out.gain;
+    pEnv * pCoef => pEnv;
+    aEnv * aCoef => aEnv;
+}'
+]
+
+{ #category : 'code generation' }
+MiniPhuck class >> reeseCode [
+
+	^ '// Reese: two detuned sines with ADSR
+48   => global float reeseNote;
+0    => global float reeseGate;
+0.5  => global float reeseLevel;
+2    => global float reeseDetune;    // Hz, 0 .. 30
+0.01 => global float reeseAttack;    // seconds
+0.2  => global float reeseDecay;
+0.5  => global float reeseSustain;
+0.1  => global float reeseRelease;
+
+SinOsc o1 => Gain mix;
+SinOsc o2 => mix;
+0.3 => o1.gain;  0.3 => o2.gain;
+mix => ADSR env => Gain out => dac;
+
+0 => float lastGate;
+while (samp => now)
+{
+    Std.mtof(reeseNote) => float f;
+    f => o1.freq;
+    f + reeseDetune => o2.freq;
+    reeseLevel => out.gain;
+
+    if (reeseGate != lastGate)
+    {
+        if (reeseGate > 0)
+        {
+            env.set(reeseAttack::second, reeseDecay::second, reeseSustain, reeseRelease::second);
+            env.keyOn();
+        }
+        else env.keyOff();
+        reeseGate => lastGate;
+    }
+}'
+]
+
+{ #category : 'code generation' }
 MiniPhuck class >> stkInstCode [
 
 	^ '// define globals
-0 => global float bellGate;      0.5 => global float bellNote;
-0 => global float brassGate;     0.5 => global float brassNote;
-0 => global float blowGate;      0.5 => global float blowNote;
-0 => global float clarinetGate;  0.5 => global float clarinetNote;
-0 => global float moogGate;      0.5 => global float moogNote;
-0 => global float shakerGate;     0.5 => global float shakerNote;
-0 => global float barGate;       0.5 => global float barNote;
+0 => global float bellGate;      60 => global float bellNote;
+0 => global float brassGate;     60 => global float brassNote;
+0 => global float blowGate;      60 => global float blowNote;
+0 => global float clarinetGate;  60 => global float clarinetNote;
+0 => global float moogGate;      60 => global float moogNote;
+0 => global float shakerGate;    60 => global float shakerNote;
+0 => global float barGate;       60 => global float barNote;
+0 => global float flutGate;      60 => global float flutNote;
+0 => global float rhodeyGate;    60 => global float rhodeyNote;
+0 => global float mandolinGate;  60 => global float mandolinNote;
+0 => global float b3Gate;        60 => global float b3Note;
+0 => global float sitarGate;     60 => global float sitarNote;
 
-// mixer, so seven voices don''t clip
+// master bus
 Gain master => dac;
 0.3 => master.gain;
 
-// define instruments
-TubeBell bell => master;
-Brass brass => master;
-BlowBotl blow => master;
-Clarinet clarinet => master;
-Moog moog => master;
-Shakers shaker => master;
-ModalBar bar => master;
+// instruments, each into its own Gain
+TubeBell bell     => Gain bellAmp     => master;
+Brass brass       => Gain brassAmp    => master;
+BlowBotl blow     => Gain blowAmp     => master;
+Clarinet clarinet => Gain clarinetAmp => master;
+Moog moog         => Gain moogAmp     => master;
+Shakers shaker    => Gain shakerAmp   => master;
+ModalBar bar      => Gain barAmp      => master;
+PercFlut flut     => Gain flutAmp     => master;
+Rhodey rhodey     => Gain rhodeyAmp   => master;
+Mandolin mandolin => Gain mandolinAmp => master;
+BeeThree b3       => Gain b3Amp       => master;
+Sitar sitar       => Gain sitarAmp    => master;
 
- 
-fun void voice(StkInstrument inst, float note, float gate)
+[bellAmp, brassAmp, blowAmp, clarinetAmp, moogAmp, shakerAmp,
+ barAmp, flutAmp, rhodeyAmp, mandolinAmp, b3Amp, sitarAmp] @=> Gain amps[];
+for (0 => int i; i < amps.size(); i++) 0.5 => amps[i].gain;
+
+// last gate per voice, so we trigger only on changes
+float lastGate[12];
+
+fun void stkVoice(StkInstrument inst, float last[], int i, float note, float gate)
 {
     Std.mtof(note) => inst.freq;
-    gate => inst.noteOn;
+    if (gate == last[i]) return;
+    if (gate > 0) gate => inst.noteOn;
+    else 1 => inst.noteOff;
+    gate => last[i];
 }
 
 while (samp => now)
 {
-    voice(bell,     bellNote,     bellGate);
-    voice(brass,    brassNote,    brassGate);
-    voice(blow,     blowNote,     blowGate);
-    voice(clarinet, clarinetNote, clarinetGate);
-    voice(moog,     moogNote,     moogGate);
-    voice(shaker,    shakerNote,    shakerGate);
-    voice(bar,      barNote,      barGate);
+    stkVoice(bell,     lastGate, 0,  bellNote,     bellGate);
+    stkVoice(brass,    lastGate, 1,  brassNote,    brassGate);
+    stkVoice(blow,     lastGate, 2,  blowNote,     blowGate);
+    stkVoice(clarinet, lastGate, 3,  clarinetNote, clarinetGate);
+    stkVoice(moog,     lastGate, 4,  moogNote,     moogGate);
+    stkVoice(shaker,   lastGate, 5,  shakerNote,   shakerGate);
+    stkVoice(bar,      lastGate, 6,  barNote,      barGate);
+    stkVoice(flut,     lastGate, 7,  flutNote,     flutGate);
+    stkVoice(rhodey,   lastGate, 8,  rhodeyNote,   rhodeyGate);
+    stkVoice(mandolin, lastGate, 9,  mandolinNote, mandolinGate);
+    stkVoice(b3,       lastGate, 10, b3Note,       b3Gate);
+    stkVoice(sitar,    lastGate, 11, sitarNote,    sitarGate);
 }'
 ]
 
