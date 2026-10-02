@@ -52,7 +52,7 @@ LibPhuck >> phuck_broadcast_eventCk: ck name: name [
 LibPhuck >> phuck_compile_codeCk: ck code: code args: args [
 	"/* code: return first new shred id, 0 on failure */"
 
-	^ self ffiCall: #(int64_t phuck_compile_code(phuck_t* ck, const char* code, const char* args))
+	^ self ffiCall: #(int64_t phuck_compile_code(phuck_t* ck, const char* #stkInstCode, const char* args))
 ]
 
 { #category : 'public - phuck' }

@@ -122,6 +122,27 @@ PhuckVM >> compile: aString [
 	^ id
 ]
 
+{ #category : 'compiling' }
+PhuckVM >> compileFile: aFileReference [
+	"Spork the ChucK file, answer the shred id."
+	^ self compileFile: aFileReference args: ''
+]
+
+{ #category : 'compiling' }
+PhuckVM >> compileFile: aFileReference args: aString [
+	"Spork the ChucK file with args, answer the shred id."
+	| file id |
+	self ensureRunning.
+	file := aFileReference asFileReference.
+	id := library
+		phuck_compile_fileCk: chuck
+		path: file asChuckPath
+		args: aString.
+	id = 0 ifTrue: [ ^ self error: 'ChucK compile error: ' , self output ].
+	self registerGlobalsIn: file contents.
+	^ id
+]
+
 { #category : 'testing' }
 PhuckVM >> ensureRunning [
 	self isRunning ifFalse: [ self error: 'PhuckVM is not running' ]

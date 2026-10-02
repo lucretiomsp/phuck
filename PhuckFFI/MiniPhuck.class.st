@@ -10,7 +10,27 @@ Class {
 }
 
 { #category : 'code generation' }
-MiniPhuck class >> code [
+MiniPhuck class >> justTubeBell [
+
+^ '0 => global float bellGate;
+0.5 => global float bellNote;
+
+
+/* Play a sine wave at 440Hz for 1 week */
+TubeBell bell => dac;
+// 1.0 => bell.noteOn;
+
+
+while (samp => now)
+    {
+        Std.mtof(bellNote ) => bell.freq;
+        bellGate => bell.noteOn;
+       
+}'
+]
+
+{ #category : 'code generation' }
+MiniPhuck class >> stkInstCode [
 
 	^ '// define globals
 0 => global float bellGate;      0.5 => global float bellNote;
@@ -50,26 +70,6 @@ while (samp => now)
     voice(moog,     moogNote,     moogGate);
     voice(shaker,    shakerNote,    shakerGate);
     voice(bar,      barNote,      barGate);
-}'
-]
-
-{ #category : 'code generation' }
-MiniPhuck class >> justTubeBell [
-
-^ '0 => global float bellGate;
-0.5 => global float bellNote;
-
-
-/* Play a sine wave at 440Hz for 1 week */
-TubeBell bell => dac;
-// 1.0 => bell.noteOn;
-
-
-while (samp => now)
-    {
-        Std.mtof(bellNote ) => bell.freq;
-        bellGate => bell.noteOn;
-       
 }'
 ]
 
