@@ -77,7 +77,7 @@ while (samp => now)
 MiniPhuck class >> zdSamplerCode [
 
 	| turbo code |
-	turbo := (FileLocator imageDirectory / 'TurboSamples')  asFileReference asChuckPath.
+	turbo := (FileLocator imageDirectory / 'TurboSamples') asFileReference asChuckPath.
 	code := 'class ZdSampler extends Chugraph
 {
     SndBuf buf => ADSR env => Gain out => outlet;
@@ -163,9 +163,13 @@ MiniPhuck class >> zdSamplerCode [
     fun void setRetrigOnNote(int on)  { on => retrigOnNote; }
     fun void setLevel(float g)        { g => buf.gain; }
 
+    fun int    numSamples()  { return files.size(); }
+    fun string sampleName()  { return files.size() ? files[curIndex] : ""; }
+
     fun void list()
     {
-        chout <= "[ZdSampler] " <= dirPath <= " (" <= files.size() <= " samples)" <= IO.nl();
+        chout <= "[ZdSampler] " <= dirPath <= " (" <= files.size()
+              <= " samples)" <= IO.nl();
         for (0 => int i; i < files.size(); i++)
             chout <= (i == curIndex ? " > " : "   ") <= i <= ": " <= files[i] <= IO.nl();
     }
@@ -235,21 +239,95 @@ MiniPhuck class >> zdSamplerCode [
 
 "TURBO_ROOT" => string turbo;
 
-global int rimNote;  global int rimGate;  global int rimIndex;
+global int bleepNote; global int bleepGate; global int bleepIndex;
+global int blipNote; global int blipGate; global int blipIndex;
+global int bongoNote; global int bongoGate; global int bongoIndex;
+global int chNote; global int chGate; global int chIndex;
+global int clapNote; global int clapGate; global int clapIndex;
+global int claveNote; global int claveGate; global int claveIndex;
+global int congaNote; global int congaGate; global int congaIndex;
+global int cowbellNote; global int cowbellGate; global int cowbellIndex;
+global int crashNote; global int crashGate; global int crashIndex;
+global int fx2Note; global int fx2Gate; global int fx2Index;
 global int kickNote; global int kickGate; global int kickIndex;
+global int ohNote; global int ohGate; global int ohIndex;
+global int ravekickNote; global int ravekickGate; global int ravekickIndex;
+global int rideNote; global int rideGate; global int rideIndex;
+global int rimNote; global int rimGate; global int rimIndex;
+global int shakerNote; global int shakerGate; global int shakerIndex;
+global int snareNote; global int snareGate; global int snareIndex;
+global int speakspellNote; global int speakspellGate; global int speakspellIndex;
+global int tambNote; global int tambGate; global int tambIndex;
+global int timbNote; global int timbGate; global int timbIndex;
+global int tomNote; global int tomGate; global int tomIndex;
 
-ZdSampler rim(turbo + "/rim")   => dac;
+ZdSampler bleep(turbo + "/bleep") => dac;
+ZdSampler blip(turbo + "/blip") => dac;
+ZdSampler bongo(turbo + "/bongo") => dac;
+ZdSampler ch(turbo + "/ch") => dac;
+ZdSampler clap(turbo + "/clap") => dac;
+ZdSampler clave(turbo + "/clave") => dac;
+ZdSampler conga(turbo + "/conga") => dac;
+ZdSampler cowbell(turbo + "/cowbell") => dac;
+ZdSampler crash(turbo + "/crash") => dac;
+ZdSampler fx2(turbo + "/fx2") => dac;
 ZdSampler kick(turbo + "/kick") => dac;
-rim.list();
-kick.list();
+ZdSampler oh(turbo + "/oh") => dac;
+ZdSampler ravekick(turbo + "/ravekick") => dac;
+ZdSampler ride(turbo + "/ride") => dac;
+ZdSampler rim(turbo + "/rim") => dac;
+ZdSampler shaker(turbo + "/shaker") => dac;
+ZdSampler snare(turbo + "/snare") => dac;
+ZdSampler speakspell(turbo + "/speakspell") => dac;
+ZdSampler tamb(turbo + "/tamb") => dac;
+ZdSampler timb(turbo + "/timb") => dac;
+ZdSampler tom(turbo + "/tom") => dac;
 
-60 => rimNote;
+60 => bleepNote;
+60 => blipNote;
+60 => bongoNote;
+60 => chNote;
+60 => clapNote;
+60 => claveNote;
+60 => congaNote;
+60 => cowbellNote;
+60 => crashNote;
+60 => fx2Note;
 60 => kickNote;
+60 => ohNote;
+60 => ravekickNote;
+60 => rideNote;
+60 => rimNote;
+60 => shakerNote;
+60 => snareNote;
+60 => speakspellNote;
+60 => tambNote;
+60 => timbNote;
+60 => tomNote;
 
 while (samp => now)
 {
-    rim.update(rimNote, rimGate, rimIndex);
+    bleep.update(bleepNote, bleepGate, bleepIndex);
+    blip.update(blipNote, blipGate, blipIndex);
+    bongo.update(bongoNote, bongoGate, bongoIndex);
+    ch.update(chNote, chGate, chIndex);
+    clap.update(clapNote, clapGate, clapIndex);
+    clave.update(claveNote, claveGate, claveIndex);
+    conga.update(congaNote, congaGate, congaIndex);
+    cowbell.update(cowbellNote, cowbellGate, cowbellIndex);
+    crash.update(crashNote, crashGate, crashIndex);
+    fx2.update(fx2Note, fx2Gate, fx2Index);
     kick.update(kickNote, kickGate, kickIndex);
+    oh.update(ohNote, ohGate, ohIndex);
+    ravekick.update(ravekickNote, ravekickGate, ravekickIndex);
+    ride.update(rideNote, rideGate, rideIndex);
+    rim.update(rimNote, rimGate, rimIndex);
+    shaker.update(shakerNote, shakerGate, shakerIndex);
+    snare.update(snareNote, snareGate, snareIndex);
+    speakspell.update(speakspellNote, speakspellGate, speakspellIndex);
+    tamb.update(tambNote, tambGate, tambIndex);
+    timb.update(timbNote, timbGate, timbIndex);
+    tom.update(tomNote, tomGate, tomIndex);
 }
 '.
 	^ code copyReplaceAll: 'TURBO_ROOT' with: turbo
