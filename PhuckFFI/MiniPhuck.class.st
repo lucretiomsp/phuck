@@ -74,9 +74,11 @@ while (samp => now)
 ]
 
 { #category : 'code generation' }
-MiniPhuck class >> zdSamplerExample [
+MiniPhuck class >> zdSamplerCode [
 
-^ 'class ZdSampler extends Chugraph
+	| turbo code |
+	turbo := (FileLocator imageDirectory / 'TurboSamples')  asFileReference asChuckPath.
+	code := 'class ZdSampler extends Chugraph
 {
     SndBuf buf => ADSR env => Gain out => outlet;
 
@@ -100,7 +102,6 @@ MiniPhuck class >> zdSamplerExample [
     fun int load(string folder)
     {
         folder => dirPath;
-        // 47 = "/"
         if (dirPath.length() > 0 && dirPath.charAt(dirPath.length() - 1) != 47)
             "/" +=> dirPath;
 
@@ -162,13 +163,9 @@ MiniPhuck class >> zdSamplerExample [
     fun void setRetrigOnNote(int on)  { on => retrigOnNote; }
     fun void setLevel(float g)        { g => buf.gain; }
 
-    fun int    numSamples()  { return files.size(); }
-    fun string sampleName()  { return files.size() ? files[curIndex] : ""; }
-
     fun void list()
     {
-        chout <= "[ZdSampler] " <= dirPath <= " (" <= files.size()
-              <= " samples)" <= IO.nl();
+        chout <= "[ZdSampler] " <= dirPath <= " (" <= files.size() <= " samples)" <= IO.nl();
         for (0 => int i; i < files.size(); i++)
             chout <= (i == curIndex ? " > " : "   ") <= i <= ": " <= files[i] <= IO.nl();
     }
@@ -206,7 +203,6 @@ MiniPhuck class >> zdSamplerExample [
         for (0 => int i; i < names.size(); i++)
         {
             names[i] => string name;
-            // 46 = "."
             if (name.length() == 0 || name.charAt(0) == 46) continue;
             name.rfind(".") => int dot;
             if (dot < 0) continue;
@@ -237,20 +233,24 @@ MiniPhuck class >> zdSamplerExample [
     }
 }
 
-global int zdNote;
-global int zdGate;
-global int zdIndex;
+"TURBO_ROOT" => string turbo;
 
-Std.getenv("HOME") + "/Documents/TurboSamplesFolder" => string turbo;
+global int rimNote;  global int rimGate;  global int rimIndex;
+global int kickNote; global int kickGate; global int kickIndex;
 
-ZdSampler zd(turbo) => dac;
-zd.list();
+ZdSampler rim(turbo + "/rim")   => dac;
+ZdSampler kick(turbo + "/kick") => dac;
+rim.list();
+kick.list();
 
-60 => zdNote;
-0  => zdGate;
-0  => zdIndex;
+60 => rimNote;
+60 => kickNote;
 
 while (samp => now)
-    zd.update(zdNote, zdGate, zdIndex);
-'
+{
+    rim.update(rimNote, rimGate, rimIndex);
+    kick.update(kickNote, kickGate, kickIndex);
+}
+'.
+	^ code copyReplaceAll: 'TURBO_ROOT' with: turbo
 ]
