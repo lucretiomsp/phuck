@@ -15,6 +15,13 @@ Class {
 	#tag : 'Core'
 }
 
+{ #category : 'defaults' }
+TurboPhuck class >> code [ 
+
+^ '
+'
+]
+
 { #category : 'accessing' }
 TurboPhuck class >> start [
 vm := PhuckVM uniqueInstance.
