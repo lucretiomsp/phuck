@@ -547,56 +547,6 @@ while (true) 1::day => now;
 ' copyReplaceAll: 'TURBO_ROOT' with: turbo
 ]
 
-{ #category : 'playing' }
-TurboPhuck class >> loop: anInteger [
-
-	self class tpPerf loop: anInteger
-]
-
-{ #category : 'playing' }
-TurboPhuck class >> mute: aSymbol [
-
-	self class tpPerf mute: aSymbol
-]
-
-{ #category : 'playing' }
-TurboPhuck class >> muteAll [
-
-	self class tpPerf muteAll
-]
-
-{ #category : 'running' }
-TurboPhuck class >> play [
-
-	self class tpPerf play
-]
-
-{ #category : 'playing' }
-TurboPhuck class >> playFor: aNumberOfBars [
-
-	self class tpPerf playFor: aNumberOfBars
-]
-
-{ #category : 'playing' }
-TurboPhuck class >> playNote: aMidiNN prefix: aString dur: aDuration [
-	"Send a gate dur: aDuration in seconds to the parameter named aString, Gate and a MidiNN converted to Hertz to  the parameter named aString , Note"
-
-	self class playNote: aMidiNN prefix: aString dur: aDuration
-	"Send a gate dur: aDuration in seconds to the parameter named aString, Gate and a MidiNN converted to Hertz to  the parameter named aString , Note"
-]
-
-{ #category : 'playing' }
-TurboPhuck class >> rhythm: aRhythm [
-
-	self class tpPerf rhythm: aRhythm
-]
-
-{ #category : 'playing' }
-TurboPhuck class >> solo: aSymbol [
-
-	self class tpPerf solo: aSymbol
-]
-
 { #category : 'running' }
 TurboPhuck class >> start [
 
@@ -605,14 +555,8 @@ TurboPhuck class >> start [
 	tpVm := PhuckVM uniqueInstance.
 	tpVm run: self code.
 
-	tpPerf performanceType: PerfType new.
+	tpPerf := perf performanceType: PerfType new.
 	tpPerf forPhuck: tpVm
-]
-
-{ #category : 'running' }
-TurboPhuck class >> stop [
-
-	self class tpPerf stop
 ]
 
 { #category : 'accessing' }
@@ -628,41 +572,97 @@ TurboPhuck class >> tpVm [
 	^ tpVm
 ]
 
-{ #category : 'playing' }
-TurboPhuck class >> traceAllParams [
-
-	self class tpVm traceAllParams
-]
-
-{ #category : 'playing' }
-TurboPhuck class >> trig: aString [
-	"send a 10 ms trigger to a Faust parameter, designed to trig envelopes and percussions-like sounds"
-
-	self class tpDsp trig: aString
-]
-
-{ #category : 'playing' }
-TurboPhuck class >> unloop [
-
-	self class tpPerf unloop
-]
-
-{ #category : 'playing' }
-TurboPhuck class >> unmute: aSymbol [
-
-	self class tpPerf unmute: aSymbol
-]
-
-{ #category : 'playing' }
-TurboPhuck class >> unsolo: aSymbol [
-
-	self class tpPerf unsolo: aSymbol
-]
-
 { #category : 'initialization' }
 TurboPhuck >> initialize [
 
 	super initialize.
 	tpPerf := Performance uniqueInstance.
 	tpPerf forPhuck: self class vm
+]
+
+{ #category : 'playing' }
+TurboPhuck >> loop: anInteger [
+
+	self class tpPerf loop: anInteger
+]
+
+{ #category : 'playing' }
+TurboPhuck >> mute: aSymbol [
+
+	self class tpPerf mute: aSymbol
+]
+
+{ #category : 'playing' }
+TurboPhuck >> muteAll [
+
+	self class tpPerf muteAll
+]
+
+{ #category : 'running' }
+TurboPhuck >> play [
+
+	self class tpPerf play
+]
+
+{ #category : 'playing' }
+TurboPhuck >> playFor: aNumberOfBars [
+
+	self class tpPerf playFor: aNumberOfBars
+]
+
+{ #category : 'playing' }
+TurboPhuck >> playNote: aMidiNN prefix: aString dur: aDuration [
+	"Send a gate dur: aDuration in seconds to the parameter named aString, Gate and a MidiNN converted to Hertz to  the parameter named aString , Note"
+
+	self class playNote: aMidiNN prefix: aString dur: aDuration
+	"Send a gate dur: aDuration in seconds to the parameter named aString, Gate and a MidiNN converted to Hertz to  the parameter named aString , Note"
+]
+
+{ #category : 'playing' }
+TurboPhuck >> rhythm: aRhythm [
+
+	self class tpPerf rhythm: aRhythm
+]
+
+{ #category : 'playing' }
+TurboPhuck >> solo: aSymbol [
+
+	self class tpPerf solo: aSymbol
+]
+
+{ #category : 'running' }
+TurboPhuck >> stop [
+
+	self class tpPerf stop
+]
+
+{ #category : 'playing' }
+TurboPhuck >> traceAllParams [
+
+	self class tpVm traceAllParams
+]
+
+{ #category : 'playing' }
+TurboPhuck >> trig: aString [
+	"send a 10 ms trigger to a Faust parameter, designed to trig envelopes and percussions-like sounds"
+
+	self class tpDsp trig: aString
+]
+
+{ #category : 'playing' }
+TurboPhuck >> unloop [
+
+	self class tpPerf unloop
+]
+
+{ #category : 'playing' }
+TurboPhuck >> unmute: aSymbol [
+
+	self class tpPerf unmute: aSymbol
+]
+
+{ #category : 'playing' }
+TurboPhuck >> unsolo: aSymbol [
+
+	self class tpPerf unsolo: aSymbol
 ]
