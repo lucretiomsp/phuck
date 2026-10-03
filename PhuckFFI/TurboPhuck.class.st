@@ -553,10 +553,11 @@ TurboPhuck class >> start [
 	| perf |
 	perf := Performance uniqueInstance.
 	tpVm := PhuckVM uniqueInstance.
+	tpVm releaseVM 
 	tpVm run: self code.
+	tpPerf := perf forPhuck: tpVm.
 
-	tpPerf := perf performanceType: PerfType new.
-	tpPerf forPhuck: tpVm
+	tpPerf performanceType: PerfType new
 ]
 
 { #category : 'accessing' }
@@ -576,8 +577,9 @@ TurboPhuck class >> tpVm [
 TurboPhuck >> initialize [
 
 	super initialize.
-	tpPerf := Performance uniqueInstance.
-	tpPerf forPhuck: self class vm
+	self class tpPerf resetAllSequencers.
+	self class tpPerf maxStepNumber: SmallInteger maxVal.
+	self class tpPerf removeAll
 ]
 
 { #category : 'playing' }

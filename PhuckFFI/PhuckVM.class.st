@@ -83,11 +83,13 @@ PhuckVM class >> startUp: resuming [
 
 { #category : 'instance creation' }
 PhuckVM class >> uniqueInstance [
+
 	^ UniqueInstance ifNil: [
-		| vm |
-		vm := self basicNew initialize.
-		[ vm start ] ifCurtailed: [ vm releaseVM ].
-		UniqueInstance := vm ]
+			  | vm |
+			  vm := self basicNew initialize.
+			  
+			  [ vm start ] ifCurtailed: [ vm releaseVM ].
+			  UniqueInstance := vm ]
 ]
 
 { #category : 'accessing' }
