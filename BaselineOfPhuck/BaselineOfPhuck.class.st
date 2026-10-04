@@ -18,10 +18,9 @@ BaselineOfPhuck >> baseline: spec [
 		spec postLoadDoIt: #copyLibraries.
 		spec package: 'PhuckFFI'.
 		spec package: 'PhuckLang' with: [ spec requires: #( 'PhuckFFI' ) ].
-		spec package: 'Phuck' with: [ spec requires: #( 'PhuckLang' ) ].
-		spec package: 'Phuck-Tests' with: [ spec requires: #( 'Phuck' ) ].
-		spec group: 'default' with: #( 'Phuck' 'Phuck-Tests' ).
-		spec group: 'ci' with: #( 'Phuck' 'Phuck-Tests' ) ]
+		spec package: 'Phuck-Tests' with: [ spec requires: #( 'PhuckLang' ) ].
+		spec group: 'default' with: #( 'PhuckLang' 'Phuck-Tests' ).
+		spec group: 'ci' with: #( 'PhuckLang' 'Phuck-Tests' ) ]
 ]
 
 { #category : 'copying' }
