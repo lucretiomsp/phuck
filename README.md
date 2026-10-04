@@ -6,13 +6,21 @@ Run [ChucK](https://chuck.stanford.edu/) inside Pharo: compile shreds, set and g
 
 **FFI bindings generated using [Pharo-CIG](https://github.com/pharo-cig/pharo-cig)**
 
+##Installation with Metacello
+```smalltalk
+Metacello new
+	baseline: 'Phuck';
+	repository: 'github://lucretiomsp/Phuck:main/src';
+	load.
+```
+
 ## Simplest usage
 ```smalltalk
 "Boot ChucK and open the sound card"
 ck := PhuckVM uniqueInstance.
 
 "Start a sine with a global frequency"
-shred2:= ck run: 'global float freq; 320 => freq;
+shred:= ck run: 'global float freq; 320 => freq;
 TriOsc s => dac; 0.2 => s.gain;
 while (true) { freq => s.freq; 10::ms => now; }'.
 
