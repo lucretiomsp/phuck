@@ -1,3 +1,9 @@
+"
+I am the baseline of Phuck, which plays ChucK from Pharo through the libphuck C shim.
+
+I load PhuckFFI (generated uFFI bindings), Phuck and Phuck-Tests.
+After loading, I copy the native libraries into phuckLibraries next to the image, from the local clone or, as a fallback, from GitHub.
+"
 Class {
 	#name : 'BaselineOfPhuck',
 	#superclass : 'BaselineOf',
@@ -11,7 +17,8 @@ BaselineOfPhuck >> baseline: spec [
 	spec for: #common do: [
 		spec postLoadDoIt: #copyLibraries.
 		spec package: 'PhuckFFI'.
-		spec package: 'Phuck' with: [ spec requires: #( 'PhuckFFI' ) ].
+		spec package: 'PhuckLang' with: [ spec requires: #( 'PhuckFFI' ) ].
+		spec package: 'Phuck' with: [ spec requires: #( 'PhuckLang' ) ].
 		spec package: 'Phuck-Tests' with: [ spec requires: #( 'Phuck' ) ].
 		spec group: 'default' with: #( 'Phuck' 'Phuck-Tests' ).
 		spec group: 'ci' with: #( 'Phuck' 'Phuck-Tests' ) ]
