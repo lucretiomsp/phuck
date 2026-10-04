@@ -547,6 +547,126 @@ while (1::ms => now)
 }' copyReplaceAll: 'TURBO_ROOT' with: turbo
 ]
 
+{ #category : 'examples' }
+TurboPhuck class >> openBusinessCard [
+
+| code |
+code := '"Start TurboPhuck, you should hear all its sound playing together".
+TurboPhuck start.
+
+"create a new instance of TurboPhuck"
+ep := TurboPhuck new.
+
+"you can see all the TurboPhuck parameters in a Transcript"
+TurboPhuck traceAllParams. 
+
+"play the Performance"
+tp playFor: 128 bars. 
+"it is empty now but we will add a sequencer to it in the following lines"
+"Sequencers can be created by sending the asSeq message to an array of 1 and 0"
+ #(1 0 0 1 0 0 0 0) asSeq to: #kick.
+"or by sending the asRhythm message to a valid rhythm preceded by an hash (that''s a Pharo symbol btw)"
+#rumba asRhythm to: #conga.
+"CMD+i (Mac) or CTRL+I (Win/Linux) on the next line to open an Inspector on the list of available rhythm"
+Rhythm list.
+"but if you want to type less (losing iconicity), just send the message to: to a valid rhythm"
+#plena to: #conga.
+"or sending the hexBeat message to a string containing only hexadecimal characters"
+''020F'' hexBeat to: #snare.
+"sending the index: message to a Sequence with a string of integers as an argument changes the samples indexes(if playing a TpSampler), which by default are all 0s" 
+16 quavers index: ''0 1 2 3 '' to: #blip.
+"sequencers can be joined with a comma - binary operator for joining collections in Pharo"
+16 quavers , 16 semiquavers to: #oh.
+"we can mute sequencers"
+tp mute: #(#kick #snare #blip).
+"and unmute them"
+tp unmute: #(#kick #snare).
+"you can create randomTrigs - and then cascade a string to change the level of the sound"
+16 randomTrigs to: #ch; level: ''0.8 0.4 0.3''.
+"or randomTrigs with a probability"
+(16 randomTrigsWithProbability: 65) to: #ch.
+"different samples inside the same folder can be played"
+#ch index: 7 asRisingArray .
+"also you can play samples of different folders, from the same Performance track"
+''clap , snare ,  cowbell*2'' asDirtSounds to: #mix ; notes: ''60 38 72 56''.
+"or you can create Sequencers by sending the asDirtNotes message to a string containin MIDI note numbers"
+''-/8 , 38 , 56*2 , -/4 , 41 , 66'' asDirtNotes to: #acid; envMod: ''0.8 0.2 0.3''.
+"or a string with noteletters and octave number , using # for sharps and b for flats"
+''c4, a4, f4*3, eb4, g#2, c1/2'' asDirtNotes to: #acid.
+"if octave number is missing, notes are considering from octave 4"
+''c, a , f , e '' asDirtNotes to: #acid.
+"or sending asDirtIndex if you want to play a different sample in the folder (if more than one available)"
+"sending the notes: message to a Sequence with a string of MIDI notes as an argument changes the notes of the Sequencer, which by default are all 60 (C3)."
+''1 , -/16 . 7 , -/9 , 12 , -/12, 18'' asDirtIndex notes: ''38 45 78 62  81'' to: #speakspell.
+"Euclidean rhythms can be created by sending the euclidean message to an array, where the first element is the number of steps and the second is the number of pulses."
+
+#(5 16) euclidean index: '' 1 3 5 2''; to:  #bongo.
+"Trigs inside a Sequencer can be offset forward"
+#(5 16) euclidean offset: 1; to: #cowbell.
+"or backwards"
+"levels can be changed sending a message to the corresponding Performance key"
+#shiko asRhythm to: #clap ; level: ''0.3  0.1 0.4''.
+
+"we can arpeggiate the notes of a Sequencer"
+#cumbiaClave asRhythm arpeggiate: ''12-sus4 0-min''; to: #psg; level: ''0.4''.
+"or we can random walk through a scale over an octave span from a root note"
+64 randomTrigs notes: (32 randomWalksOn: Scale sakura octaves: 2 root: 48) to: #psg.
+
+"sequencers can be soloed"
+tp solo: #(#psg #cowbell).
+"and unsoloed - that takes the performance back to the status between the solo"
+tp unsolo: #(#psg #cowbell).
+
+"Performance can be temporary saved"
+tp temporarySave.
+
+"bpm can be changed"
+tp bpm: 96.
+
+"saved Performance can be restored"
+tp restore.
+
+"the same rhythm can be assigned to many Sequencers"
+#(#kick #ch #cowbell ) rhythm: #banda .
+
+"we can loop a certain amount of steps"
+tp loop: 5.
+
+"unloop"
+tp unloop.
+
+"set all the Seqeuncers to the same rhythm"
+tp rhythm: ''1312'' hexBeat.
+
+"stop the performance"
+tp stop.
+
+"UZU PLAYBACK"
+
+tp  playCyclicFor: 96 bars.
+
+''<c6 ~ d3 a2>*64'' asMondoNotes to: #acid.
+
+''60*4 ~ 72*2'' asMondoNotes to: #kick.
+''<snare rim  blip cowbell>*8'' asMondoSounds to: #mix.
+''80 70 76 [77*5]'' asMondoNotes to: #clap; 
+
+"but traditional Coypu method can be used also in the cyclic playback, sequencer length will be trimmed to 16 steps"
+16 upbeats to: #ride.
+tp solo: #acid.
+#downbeats asRhythm to: #kick.
+#(3 16) euclidean to: #rim.
+16 randomTrigs to: #blip; index: ''1 2 3 ''; notes: ''40 51''.
+tp mute: #blip.
+
+tp stop.
+
+'.
+
+
+StPlayground new contents: code ; open
+]
+
 { #category : 'running' }
 TurboPhuck class >> start [
 
