@@ -21,11 +21,79 @@ TurboPhuck class >> code [
 
 	| turbo |
 	turbo := (FileLocator imageDirectory / 'TurboSamples') asFileReference asChuckPath.
-	^ '// ===================== MASTER =====================
+	^ '// ===================== GLOBALS =====================
 
-Gain master => Dyno lim => dac;
-0.8 => master.gain;
-lim.limit();
+// STK
+0 => global float bellGate;      60 => global float bellNote;
+0 => global float brassGate;     60 => global float brassNote;
+0 => global float blowGate;      60 => global float blowNote;
+0 => global float clarinetGate;  60 => global float clarinetNote;
+0 => global float moogGate;      60 => global float moogNote;
+0 => global float stkShakerGate; 60 => global float stkShakerNote;
+0 => global float barGate;       60 => global float barNote;
+0 => global float flutGate;      60 => global float flutNote;
+0 => global float rhodeyGate;    60 => global float rhodeyNote;
+0 => global float mandolinGate;  60 => global float mandolinNote;
+0 => global float beeThreeGate;  60 => global float beeThreeNote;
+0 => global float sitarGate;     60 => global float sitarNote;
+
+// ZdSampler
+60 => global int bleepNote;      global int bleepGate;      global int bleepIndex;
+60 => global int blipNote;       global int blipGate;       global int blipIndex;
+60 => global int bongoNote;      global int bongoGate;      global int bongoIndex;
+60 => global int chNote;         global int chGate;         global int chIndex;
+60 => global int clapNote;       global int clapGate;       global int clapIndex;
+60 => global int claveNote;      global int claveGate;      global int claveIndex;
+60 => global int congaNote;      global int congaGate;      global int congaIndex;
+60 => global int cowbellNote;    global int cowbellGate;    global int cowbellIndex;
+60 => global int crashNote;      global int crashGate;      global int crashIndex;
+60 => global int fx2Note;        global int fx2Gate;        global int fx2Index;
+60 => global int kickNote;       global int kickGate;       global int kickIndex;
+60 => global int ohNote;         global int ohGate;         global int ohIndex;
+60 => global int ravekickNote;   global int ravekickGate;   global int ravekickIndex;
+60 => global int rideNote;       global int rideGate;       global int rideIndex;
+60 => global int rimNote;        global int rimGate;        global int rimIndex;
+60 => global int shakerNote;     global int shakerGate;     global int shakerIndex;
+60 => global int snareNote;      global int snareGate;      global int snareIndex;
+60 => global int speakspellNote; global int speakspellGate; global int speakspellIndex;
+60 => global int tambNote;       global int tambGate;       global int tambIndex;
+60 => global int timbNote;       global int timbGate;       global int timbIndex;
+60 => global int tomNote;        global int tomGate;        global int tomIndex;
+
+// Hoover
+60  => global float hooverNote;
+0   => global float hooverGate;
+0.3 => global float hooverLevel;
+
+// Acid
+48    => global float acidNote;
+0     => global float acidGate;
+0.6   => global float acidLevel;
+0.3   => global float acidCutoff;
+4.5   => global float acidResonance;
+0.64  => global float acidEnvMod;
+0.282 => global float acidDecay;
+0     => global float acidTuning;
+0     => global float acidWaveform;
+
+// Reese
+48   => global float reeseNote;
+0    => global float reeseGate;
+0.5  => global float reeseLevel;
+2    => global float reeseDetune;
+0.01 => global float reeseAttack;
+0.2  => global float reeseDecay;
+0.5  => global float reeseSustain;
+0.1  => global float reeseRelease;
+
+// Kick99
+33   => global float kick99Note;
+0    => global float kick99Gate;
+0.8  => global float kick99Level;
+0.4  => global float kick99Decay;
+150  => global float kick99PitchAmt;
+0.03 => global float kick99PitchDecay;
+0.3  => global float kick99Click;
 
 // ===================== CLASSES =====================
 
@@ -209,7 +277,7 @@ class Hoover extends Chugraph
     0.3 => s2.gain;  0.3 => s3.gain;  0.3 => t1.gain;
     ampEnv.set(1::ms, 200::ms, 0.5, 350::ms);
 
-    // pitch envelope as FM input, no polling
+    // pitch envelope as FM input, runs at audio rate inside the UGens
     Step one => ADSR pitchEnv;
     pitchEnv => Gain fm1 => s1;
     pitchEnv => Gain fm2 => s2;
@@ -220,15 +288,20 @@ class Hoover extends Chugraph
     1.0 => one.next;
     pitchEnv.set(1::ms, 1::second, 0.0, 600::ms);
 
+    -1.0 => float lastNote;
     0 => float lastGate;
 
-    fun void trigger(float note, float gate, float level)
+    fun void tick(float note, float gate, float level)
     {
-        Std.mtof(note) => float f;
-        f         => s1.freq;
-        f + 3     => s2.freq;
-        f * 2 + 3 => s3.freq;
-        f * 0.5   => t1.freq;
+        if (note != lastNote)
+        {
+            Std.mtof(note) => float f;
+            f         => s1.freq;
+            f + 3     => s2.freq;
+            f * 2 + 3 => s3.freq;
+            f * 0.5   => t1.freq;
+            note => lastNote;
+        }
         level => out.gain;
         if (gate == lastGate) return;
         if (gate > 0) { ampEnv.keyOn();  pitchEnv.keyOn(); }
@@ -246,54 +319,33 @@ class Acid extends Chugraph
     ampEnv.set(1::ms, 200::ms, 0.0, 200::ms);
     1.0 => one.next;
     0 => float lastGate;
-    0 => int gen;
-    0.3 => float cutoff;
-    0.64 => float envMod;
 
-    fun void trigger(float note, float gate, float level, float cut, float res,
-                     float mod, float decay, float tuning, float waveform)
+    fun void tick(float note, float gate, float level, float cutoff, float res,
+                  float envMod, float decay, float tuning, float waveform)
     {
+        if (gate != lastGate)
+        {
+            if (gate > 0)
+            {
+                filterEnv.set(1::ms, decay::second, 0.0, decay::second);
+                ampEnv.keyOn();
+                filterEnv.keyOn();
+            }
+            else ampEnv.keyOff();
+            gate => lastGate;
+        }
+
         Std.mtof(note) + tuning => float f;
         f => saw.freq;
         f => sqr.freq;
         if (waveform > 0.5) { 0.0 => saw.gain; 0.25 => sqr.gain; }
         else                { 0.25 => saw.gain; 0.0 => sqr.gain; }
-        cut => cutoff;
-        mod => envMod;
-        res => filt.Q;
-        1.0 / (0.5 + cut) => comp.gain;
-        level => out.gain;
-        setCutoff();
 
-        if (gate == lastGate) return;
-        if (gate > 0)
-        {
-            filterEnv.set(1::ms, decay::second, 0.0, decay::second);
-            ampEnv.keyOn();
-            filterEnv.keyOn();
-            gen++;
-            spork ~ sweep(gen, decay::second + 5::ms);
-        }
-        else ampEnv.keyOff();
-        gate => lastGate;
-    }
-
-    fun void setCutoff()
-    {
         Math.min(1.0, filterEnv.last() * (1.0 - cutoff) * envMod + cutoff) => float n;
         Math.min(18000.0, 2.0 * Math.pow(10.0, 3.0 * n + 1.0)) => filt.freq;
-    }
-
-    // runs only while the filter envelope moves, stops on retrigger
-    fun void sweep(int id, dur length)
-    {
-        now + length => time end;
-        while (id == gen && now < end)
-        {
-            setCutoff();
-            1::ms => now;
-        }
-        if (id == gen) setCutoff();
+        res => filt.Q;
+        1.0 / (0.5 + cutoff) => comp.gain;
+        level => out.gain;
     }
 }
 
@@ -304,8 +356,8 @@ class Reese extends Chugraph
     0.3 => o1.gain;  0.3 => o2.gain;
     0 => float lastGate;
 
-    fun void trigger(float note, float gate, float level, float detune,
-                     float a, float d, float s, float r)
+    fun void tick(float note, float gate, float level, float detune,
+                  float a, float d, float s, float r)
     {
         Std.mtof(note) => float f;
         f => o1.freq;
@@ -342,8 +394,8 @@ class Kick99 extends Chugraph
     second / samp => float sr;
     0 => float lastGate;
 
-    fun void trigger(float note, float gate, float level, float decay,
-                     float pitchAmt, float pitchDecay, float click)
+    fun void tick(float note, float gate, float level, float decay,
+                  float pitchAmt, float pitchDecay, float click)
     {
         Std.mtof(note) => body.freq;
         pitchAmt => pAmt.gain;
@@ -365,21 +417,30 @@ class Kick99 extends Chugraph
     }
 }
 
-// ===================== STK =====================
+// ===================== STK HELPER =====================
 
-0 => global float bellGate;      60 => global float bellNote;      global Event bellTrig;
-0 => global float brassGate;     60 => global float brassNote;     global Event brassTrig;
-0 => global float blowGate;      60 => global float blowNote;      global Event blowTrig;
-0 => global float clarinetGate;  60 => global float clarinetNote;  global Event clarinetTrig;
-0 => global float moogGate;      60 => global float moogNote;      global Event moogTrig;
-0 => global float stkShakerGate; 60 => global float stkShakerNote; global Event stkShakerTrig;
-0 => global float barGate;       60 => global float barNote;       global Event barTrig;
-0 => global float flutGate;      60 => global float flutNote;      global Event flutTrig;
-0 => global float rhodeyGate;    60 => global float rhodeyNote;    global Event rhodeyTrig;
-0 => global float mandolinGate;  60 => global float mandolinNote;  global Event mandolinTrig;
-0 => global float beeThreeGate;  60 => global float beeThreeNote;  global Event beeThreeTrig;
-0 => global float sitarGate;     60 => global float sitarNote;     global Event sitarTrig;
+// sets pitch only when the note changes, gates only on change
+fun void stkVoice(StkInstrument inst, float lastNote[], float lastGate[],
+                  int i, float note, float gate)
+{
+    if (note != lastNote[i])
+    {
+        Std.mtof(note) => inst.freq;
+        note => lastNote[i];
+    }
+    if (gate == lastGate[i]) return;
+    if (gate > 0) gate => inst.noteOn;
+    else 1 => inst.noteOff;
+    gate => lastGate[i];
+}
 
+// ===================== GRAPH =====================
+
+Gain master => Dyno lim => dac;
+0.8 => master.gain;
+lim.limit();
+
+// STK
 Gain stkMaster => master;
 0.3 => stkMaster.gain;
 
@@ -400,68 +461,11 @@ Sitar sitar        => Gain sitarAmp     => stkMaster;
  barAmp, flutAmp, rhodeyAmp, mandolinAmp, b3Amp, sitarAmp] @=> Gain stkAmps[];
 for (0 => int i; i < stkAmps.size(); i++) 0.5 => stkAmps[i].gain;
 
-// sets pitch, gates only on change, returns the new gate state
-fun float stkSet(StkInstrument inst, float note, float gate, float last)
-{
-    Std.mtof(note) => inst.freq;
-    if (gate != last)
-    {
-        if (gate > 0) gate => inst.noteOn;
-        else 1 => inst.noteOff;
-    }
-    return gate;
-}
+float stkLastNote[12];
+float stkLastGate[12];
+for (0 => int i; i < 12; i++) -1.0 => stkLastNote[i];
 
-fun void bellVoice(StkInstrument i)      { 0.0 => float l; while (true) { bellTrig => now;      stkSet(i, bellNote, bellGate, l) => l; } }
-fun void brassVoice(StkInstrument i)     { 0.0 => float l; while (true) { brassTrig => now;     stkSet(i, brassNote, brassGate, l) => l; } }
-fun void blowVoice(StkInstrument i)      { 0.0 => float l; while (true) { blowTrig => now;      stkSet(i, blowNote, blowGate, l) => l; } }
-fun void clarinetVoice(StkInstrument i)  { 0.0 => float l; while (true) { clarinetTrig => now;  stkSet(i, clarinetNote, clarinetGate, l) => l; } }
-fun void moogVoice(StkInstrument i)      { 0.0 => float l; while (true) { moogTrig => now;      stkSet(i, moogNote, moogGate, l) => l; } }
-fun void stkShakerVoice(StkInstrument i) { 0.0 => float l; while (true) { stkShakerTrig => now; stkSet(i, stkShakerNote, stkShakerGate, l) => l; } }
-fun void barVoice(StkInstrument i)       { 0.0 => float l; while (true) { barTrig => now;       stkSet(i, barNote, barGate, l) => l; } }
-fun void flutVoice(StkInstrument i)      { 0.0 => float l; while (true) { flutTrig => now;      stkSet(i, flutNote, flutGate, l) => l; } }
-fun void rhodeyVoice(StkInstrument i)    { 0.0 => float l; while (true) { rhodeyTrig => now;    stkSet(i, rhodeyNote, rhodeyGate, l) => l; } }
-fun void mandolinVoice(StkInstrument i)  { 0.0 => float l; while (true) { mandolinTrig => now;  stkSet(i, mandolinNote, mandolinGate, l) => l; } }
-fun void beeThreeVoice(StkInstrument i)  { 0.0 => float l; while (true) { beeThreeTrig => now;  stkSet(i, beeThreeNote, beeThreeGate, l) => l; } }
-fun void sitarVoice(StkInstrument i)     { 0.0 => float l; while (true) { sitarTrig => now;     stkSet(i, sitarNote, sitarGate, l) => l; } }
-
-spork ~ bellVoice(bell);
-spork ~ brassVoice(brass);
-spork ~ blowVoice(blow);
-spork ~ clarinetVoice(clarinet);
-spork ~ moogVoice(moog);
-spork ~ stkShakerVoice(stkShaker);
-spork ~ barVoice(bar);
-spork ~ flutVoice(flut);
-spork ~ rhodeyVoice(rhodey);
-spork ~ mandolinVoice(mandolin);
-spork ~ beeThreeVoice(b3);
-spork ~ sitarVoice(sitar);
-
-// ===================== ZDSAMPLER =====================
-
-60 => global int bleepNote;      global int bleepGate;      global int bleepIndex;      global Event bleepTrig;
-60 => global int blipNote;       global int blipGate;       global int blipIndex;       global Event blipTrig;
-60 => global int bongoNote;      global int bongoGate;      global int bongoIndex;      global Event bongoTrig;
-60 => global int chNote;         global int chGate;         global int chIndex;         global Event chTrig;
-60 => global int clapNote;       global int clapGate;       global int clapIndex;       global Event clapTrig;
-60 => global int claveNote;      global int claveGate;      global int claveIndex;      global Event claveTrig;
-60 => global int congaNote;      global int congaGate;      global int congaIndex;      global Event congaTrig;
-60 => global int cowbellNote;    global int cowbellGate;    global int cowbellIndex;    global Event cowbellTrig;
-60 => global int crashNote;      global int crashGate;      global int crashIndex;      global Event crashTrig;
-60 => global int fx2Note;        global int fx2Gate;        global int fx2Index;        global Event fx2Trig;
-60 => global int kickNote;       global int kickGate;       global int kickIndex;       global Event kickTrig;
-60 => global int ohNote;         global int ohGate;         global int ohIndex;         global Event ohTrig;
-60 => global int ravekickNote;   global int ravekickGate;   global int ravekickIndex;   global Event ravekickTrig;
-60 => global int rideNote;       global int rideGate;       global int rideIndex;       global Event rideTrig;
-60 => global int rimNote;        global int rimGate;        global int rimIndex;        global Event rimTrig;
-60 => global int shakerNote;     global int shakerGate;     global int shakerIndex;     global Event shakerTrig;
-60 => global int snareNote;      global int snareGate;      global int snareIndex;      global Event snareTrig;
-60 => global int speakspellNote; global int speakspellGate; global int speakspellIndex; global Event speakspellTrig;
-60 => global int tambNote;       global int tambGate;       global int tambIndex;       global Event tambTrig;
-60 => global int timbNote;       global int timbGate;       global int timbIndex;       global Event timbTrig;
-60 => global int tomNote;        global int tomGate;        global int tomIndex;        global Event tomTrig;
-
+// ZdSampler
 "TURBO_ROOT" => string turbo;
 ZdSampler bleep(turbo + "/bleep")           => master;
 ZdSampler blip(turbo + "/blip")             => master;
@@ -485,140 +489,62 @@ ZdSampler tamb(turbo + "/tamb")             => master;
 ZdSampler timb(turbo + "/timb")             => master;
 ZdSampler tom(turbo + "/tom")               => master;
 
-fun void bleepVoice(ZdSampler s)      { while (true) { bleepTrig => now;      s.update(bleepNote, bleepGate, bleepIndex); } }
-fun void blipVoice(ZdSampler s)       { while (true) { blipTrig => now;       s.update(blipNote, blipGate, blipIndex); } }
-fun void bongoVoice(ZdSampler s)      { while (true) { bongoTrig => now;      s.update(bongoNote, bongoGate, bongoIndex); } }
-fun void chVoice(ZdSampler s)         { while (true) { chTrig => now;         s.update(chNote, chGate, chIndex); } }
-fun void clapVoice(ZdSampler s)       { while (true) { clapTrig => now;       s.update(clapNote, clapGate, clapIndex); } }
-fun void claveVoice(ZdSampler s)      { while (true) { claveTrig => now;      s.update(claveNote, claveGate, claveIndex); } }
-fun void congaVoice(ZdSampler s)      { while (true) { congaTrig => now;      s.update(congaNote, congaGate, congaIndex); } }
-fun void cowbellVoice(ZdSampler s)    { while (true) { cowbellTrig => now;    s.update(cowbellNote, cowbellGate, cowbellIndex); } }
-fun void crashVoice(ZdSampler s)      { while (true) { crashTrig => now;      s.update(crashNote, crashGate, crashIndex); } }
-fun void fx2Voice(ZdSampler s)        { while (true) { fx2Trig => now;        s.update(fx2Note, fx2Gate, fx2Index); } }
-fun void kickVoice(ZdSampler s)       { while (true) { kickTrig => now;       s.update(kickNote, kickGate, kickIndex); } }
-fun void ohVoice(ZdSampler s)         { while (true) { ohTrig => now;         s.update(ohNote, ohGate, ohIndex); } }
-fun void ravekickVoice(ZdSampler s)   { while (true) { ravekickTrig => now;   s.update(ravekickNote, ravekickGate, ravekickIndex); } }
-fun void rideVoice(ZdSampler s)       { while (true) { rideTrig => now;       s.update(rideNote, rideGate, rideIndex); } }
-fun void rimVoice(ZdSampler s)        { while (true) { rimTrig => now;        s.update(rimNote, rimGate, rimIndex); } }
-fun void shakerVoice(ZdSampler s)     { while (true) { shakerTrig => now;     s.update(shakerNote, shakerGate, shakerIndex); } }
-fun void snareVoice(ZdSampler s)      { while (true) { snareTrig => now;      s.update(snareNote, snareGate, snareIndex); } }
-fun void speakspellVoice(ZdSampler s) { while (true) { speakspellTrig => now; s.update(speakspellNote, speakspellGate, speakspellIndex); } }
-fun void tambVoice(ZdSampler s)       { while (true) { tambTrig => now;       s.update(tambNote, tambGate, tambIndex); } }
-fun void timbVoice(ZdSampler s)       { while (true) { timbTrig => now;       s.update(timbNote, timbGate, timbIndex); } }
-fun void tomVoice(ZdSampler s)        { while (true) { tomTrig => now;        s.update(tomNote, tomGate, tomIndex); } }
-
-spork ~ bleepVoice(bleep);
-spork ~ blipVoice(blip);
-spork ~ bongoVoice(bongo);
-spork ~ chVoice(ch);
-spork ~ clapVoice(clap);
-spork ~ claveVoice(clave);
-spork ~ congaVoice(conga);
-spork ~ cowbellVoice(cowbell);
-spork ~ crashVoice(crash);
-spork ~ fx2Voice(fx2);
-spork ~ kickVoice(kick);
-spork ~ ohVoice(oh);
-spork ~ ravekickVoice(ravekick);
-spork ~ rideVoice(ride);
-spork ~ rimVoice(rim);
-spork ~ shakerVoice(shaker);
-spork ~ snareVoice(snare);
-spork ~ speakspellVoice(speakspell);
-spork ~ tambVoice(tamb);
-spork ~ timbVoice(timb);
-spork ~ tomVoice(tom);
-
-// ===================== SYNTHS =====================
-
-60  => global float hooverNote;
-0   => global float hooverGate;
-0.3 => global float hooverLevel;
-global Event hooverTrig;
-
-48    => global float acidNote;
-0     => global float acidGate;
-0.6   => global float acidLevel;
-0.3   => global float acidCutoff;
-4.5   => global float acidResonance;
-0.64  => global float acidEnvMod;
-0.282 => global float acidDecay;
-0     => global float acidTuning;
-0     => global float acidWaveform;
-global Event acidTrig;
-
-48   => global float reeseNote;
-0    => global float reeseGate;
-0.5  => global float reeseLevel;
-2    => global float reeseDetune;
-0.01 => global float reeseAttack;
-0.2  => global float reeseDecay;
-0.5  => global float reeseSustain;
-0.1  => global float reeseRelease;
-global Event reeseTrig;
-
-33   => global float kick99Note;
-0    => global float kick99Gate;
-0.8  => global float kick99Level;
-0.4  => global float kick99Decay;
-150  => global float kick99PitchAmt;
-0.03 => global float kick99PitchDecay;
-0.3  => global float kick99Click;
-global Event kick99Trig;
-
+// Synths
 Hoover hoover => master;
 Acid   acid   => master;
 Reese  reese  => master;
 Kick99 kick99 => master;
 
-fun void hooverVoice(Hoover v)
+// ===================== RUN (single shred, 1 ms control rate) =====================
+
+while (1::ms => now)
 {
-    while (true)
-    {
-        hooverTrig => now;
-        v.trigger(hooverNote, hooverGate, hooverLevel);
-    }
-}
+    // STK
+    stkVoice(bell,      stkLastNote, stkLastGate, 0,  bellNote,      bellGate);
+    stkVoice(brass,     stkLastNote, stkLastGate, 1,  brassNote,     brassGate);
+    stkVoice(blow,      stkLastNote, stkLastGate, 2,  blowNote,      blowGate);
+    stkVoice(clarinet,  stkLastNote, stkLastGate, 3,  clarinetNote,  clarinetGate);
+    stkVoice(moog,      stkLastNote, stkLastGate, 4,  moogNote,      moogGate);
+    stkVoice(stkShaker, stkLastNote, stkLastGate, 5,  stkShakerNote, stkShakerGate);
+    stkVoice(bar,       stkLastNote, stkLastGate, 6,  barNote,       barGate);
+    stkVoice(flut,      stkLastNote, stkLastGate, 7,  flutNote,      flutGate);
+    stkVoice(rhodey,    stkLastNote, stkLastGate, 8,  rhodeyNote,    rhodeyGate);
+    stkVoice(mandolin,  stkLastNote, stkLastGate, 9,  mandolinNote,  mandolinGate);
+    stkVoice(b3,        stkLastNote, stkLastGate, 10, beeThreeNote,  beeThreeGate);
+    stkVoice(sitar,     stkLastNote, stkLastGate, 11, sitarNote,     sitarGate);
 
-fun void acidVoice(Acid v)
-{
-    while (true)
-    {
-        acidTrig => now;
-        v.trigger(acidNote, acidGate, acidLevel, acidCutoff, acidResonance,
-                  acidEnvMod, acidDecay, acidTuning, acidWaveform);
-    }
-}
+    // ZdSampler
+    bleep.update(bleepNote, bleepGate, bleepIndex);
+    blip.update(blipNote, blipGate, blipIndex);
+    bongo.update(bongoNote, bongoGate, bongoIndex);
+    ch.update(chNote, chGate, chIndex);
+    clap.update(clapNote, clapGate, clapIndex);
+    clave.update(claveNote, claveGate, claveIndex);
+    conga.update(congaNote, congaGate, congaIndex);
+    cowbell.update(cowbellNote, cowbellGate, cowbellIndex);
+    crash.update(crashNote, crashGate, crashIndex);
+    fx2.update(fx2Note, fx2Gate, fx2Index);
+    kick.update(kickNote, kickGate, kickIndex);
+    oh.update(ohNote, ohGate, ohIndex);
+    ravekick.update(ravekickNote, ravekickGate, ravekickIndex);
+    ride.update(rideNote, rideGate, rideIndex);
+    rim.update(rimNote, rimGate, rimIndex);
+    shaker.update(shakerNote, shakerGate, shakerIndex);
+    snare.update(snareNote, snareGate, snareIndex);
+    speakspell.update(speakspellNote, speakspellGate, speakspellIndex);
+    tamb.update(tambNote, tambGate, tambIndex);
+    timb.update(timbNote, timbGate, timbIndex);
+    tom.update(tomNote, tomGate, tomIndex);
 
-fun void reeseVoice(Reese v)
-{
-    while (true)
-    {
-        reeseTrig => now;
-        v.trigger(reeseNote, reeseGate, reeseLevel, reeseDetune,
-                  reeseAttack, reeseDecay, reeseSustain, reeseRelease);
-    }
-}
-
-fun void kick99Voice(Kick99 v)
-{
-    while (true)
-    {
-        kick99Trig => now;
-        v.trigger(kick99Note, kick99Gate, kick99Level, kick99Decay,
-                  kick99PitchAmt, kick99PitchDecay, kick99Click);
-    }
-}
-
-spork ~ hooverVoice(hoover);
-spork ~ acidVoice(acid);
-spork ~ reeseVoice(reese);
-spork ~ kick99Voice(kick99);
-
-// ===================== RUN =====================
-// all work happens in the voice shreds, keep the parent alive
-while (true) 1::day => now;
-' copyReplaceAll: 'TURBO_ROOT' with: turbo
+    // Synths
+    hoover.tick(hooverNote, hooverGate, hooverLevel);
+    acid.tick(acidNote, acidGate, acidLevel, acidCutoff, acidResonance,
+              acidEnvMod, acidDecay, acidTuning, acidWaveform);
+    reese.tick(reeseNote, reeseGate, reeseLevel, reeseDetune,
+               reeseAttack, reeseDecay, reeseSustain, reeseRelease);
+    kick99.tick(kick99Note, kick99Gate, kick99Level, kick99Decay,
+                kick99PitchAmt, kick99PitchDecay, kick99Click);
+}' copyReplaceAll: 'TURBO_ROOT' with: turbo
 ]
 
 { #category : 'running' }
