@@ -34,7 +34,7 @@ TurboPhuck class >> code [
 0 => global float flutGate;      60 => global float flutNote;
 0 => global float rhodeyGate;    60 => global float rhodeyNote;
 0 => global float mandolinGate;  60 => global float mandolinNote;
-0 => global float b3Gate;        60 => global float b3Note;
+0 => global float beeThreeGate;  60 => global float beeThreeNote;
 0 => global float sitarGate;     60 => global float sitarNote;
 
 // ZdSampler
