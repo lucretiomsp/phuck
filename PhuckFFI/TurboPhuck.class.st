@@ -547,6 +547,15 @@ while (1::ms => now)
 }' copyReplaceAll: 'TURBO_ROOT' with: turbo
 ]
 
+{ #category : 'listing' }
+TurboPhuck class >> listOfInstruments [
+
+	| instruments |
+	instruments := (TurboPhuck tpVm globals keys select: [ :k | k includesSubstring: 'Gate' ])
+	collect: [ :k | k copyReplaceAll: 'Gate' with: '' ].
+	^ instruments
+]
+
 { #category : 'examples' }
 TurboPhuck class >> openBusinessCard [
 
