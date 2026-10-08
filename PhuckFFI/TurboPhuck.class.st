@@ -555,7 +555,7 @@ code := '"Start TurboPhuck, you should hear all its sound playing together".
 TurboPhuck start.
 
 "create a new instance of TurboPhuck"
-ep := TurboPhuck new.
+tp := TurboPhuck new.
 
 "you can see all the TurboPhuck parameters in a Transcript"
 TurboPhuck traceAllParams. 
@@ -590,7 +590,7 @@ tp unmute: #(#kick #snare).
 "also you can play samples of different folders, from the same Performance track"
 ''clap , snare ,  cowbell*2'' asDirtSounds to: #mix ; notes: ''60 38 72 56''.
 "or you can create Sequencers by sending the asDirtNotes message to a string containin MIDI note numbers"
-''-/8 , 38 , 56*2 , -/4 , 41 , 66'' asDirtNotes to: #acid; envMod: ''0.8 0.2 0.3''.
+''-/8 , 38 , 56*2 , -/4 , 41 , 66'' asDirtNotes to: #mandolin.
 "or a string with noteletters and octave number , using # for sharps and b for flats"
 ''c4, a4, f4*3, eb4, g#2, c1/2'' asDirtNotes to: #acid.
 "if octave number is missing, notes are considering from octave 4"
@@ -608,14 +608,14 @@ tp unmute: #(#kick #snare).
 #shiko asRhythm to: #clap ; level: ''0.3  0.1 0.4''.
 
 "we can arpeggiate the notes of a Sequencer"
-#cumbiaClave asRhythm arpeggiate: ''12-sus4 0-min''; to: #psg; level: ''0.4''.
+#cumbiaClave asRhythm arpeggiate: ''12-sus4 0-min''; to: #bell; level: ''0.4''.
 "or we can random walk through a scale over an octave span from a root note"
-64 randomTrigs notes: (32 randomWalksOn: Scale sakura octaves: 2 root: 48) to: #psg.
+64 randomTrigs notes: (32 randomWalksOn: Scale sakura octaves: 2 root: 48) to: #rhodey.
 
 "sequencers can be soloed"
-tp solo: #(#psg #cowbell).
+tp solo: #(#bell #cowbell).
 "and unsoloed - that takes the performance back to the status between the solo"
-tp unsolo: #(#psg #cowbell).
+tp unsolo: #(#bell #cowbell).
 
 "Performance can be temporary saved"
 tp temporarySave.
