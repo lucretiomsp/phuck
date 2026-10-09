@@ -45,7 +45,7 @@ jobs:
           DEBIAN_FRONTEND: noninteractive
         run: |
           apt-get update
-          apt-get install -y build-essential git libasound2-dev python3-pip binutils
+          apt-get install -y build-essential git libasound2-dev libpulse-dev pkg-config python3-pip binutils
           pip3 install --upgrade pip
           pip3 install cmake
 
@@ -66,13 +66,15 @@ jobs:
         run: cmake --build build --config Release --parallel
         shell: bash
 
-      - name: Check glibc requirement
+      - name: Check Linux binary (glibc + audio backends)
         if: runner.os == 'Linux'
         run: |
           need=$(objdump -T ${{ matrix.lib }} | grep -o 'GLIBC_[0-9.]*' | sort -Vu | tail -1)
           echo "libphuck.so needs $need"
           [ "$(printf '%s\nGLIBC_2.31\n' "$need" | sort -V | tail -1)" = "GLIBC_2.31" ] \
             || { echo "::error::needs $need, newer than GLIBC_2.31"; exit 1; }
+          ldd ${{ matrix.lib }} | grep -q libasound || { echo "::error::ALSA backend not linked"; exit 1; }
+          ldd ${{ matrix.lib }} | grep -q libpulse  || { echo "::error::PulseAudio backend not linked"; exit 1; }
         shell: bash
 
       - name: Offline test (SinOsc freq control)
