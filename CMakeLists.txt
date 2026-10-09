@@ -4,6 +4,11 @@
 # Output: libphuck.so (Linux) / libphuck.dylib (macOS) / phuck.dll (Windows)
 
 cmake_minimum_required(VERSION 3.16)
+
+# must come before project(): project() caches its own (empty) value,
+# and a later set(... CACHE ...) would silently be ignored
+set(CMAKE_OSX_DEPLOYMENT_TARGET "10.13" CACHE STRING "minimum macOS version")
+
 project(phuck C CXX)
 
 set(CHUCK_SRC "${CMAKE_CURRENT_SOURCE_DIR}/../chuck/src" CACHE PATH "path to chuck/src")
@@ -13,9 +18,6 @@ set(HOST "${CHUCK_SRC}/host")
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded")      # static CRT: nothing extra to ship
-if(APPLE)
-  set(CMAKE_OSX_DEPLOYMENT_TARGET "10.13" CACHE STRING "")
-endif()
 
 # same file list as chuck/src/core/makefile; chuck_yacc.c is the pre-generated
 # parser shipped in the repo, so bison/flex are not needed
@@ -65,10 +67,14 @@ elseif(WIN32)
     dsound winmm dinput8 dxguid ws2_32 wsock32 iphlpapi)
   set_target_properties(phuck PROPERTIES PREFIX "")    # phuck.dll, not libphuck.dll
 else()
-  target_compile_definitions(phuck PRIVATE __LINUX_ALSA__ __PLATFORM_LINUX__)
+  # ALSA + PulseAudio: Pulse goes through the sound server (also PipeWire),
+  # so the device isn't "busy" on desktop systems
+  find_package(PkgConfig REQUIRED)
+  pkg_check_modules(PULSE REQUIRED IMPORTED_TARGET libpulse-simple libpulse)
+  target_compile_definitions(phuck PRIVATE __LINUX_ALSA__ __LINUX_PULSE__ __PLATFORM_LINUX__)
   target_compile_options(phuck PRIVATE -fno-strict-aliasing)
   target_link_options(phuck PRIVATE -static-libstdc++ -static-libgcc)
-  target_link_libraries(phuck PRIVATE asound pthread dl m)
+  target_link_libraries(phuck PRIVATE asound PkgConfig::PULSE pthread dl m)
 endif()
 
 # optional C tests (not built by default)
@@ -78,5 +84,3 @@ if(PHUCK_TESTS)
   target_link_libraries(test_sine PRIVATE phuck)
   if(NOT WIN32)
     target_link_libraries(test_sine PRIVATE m)
-  endif()
-endif()
