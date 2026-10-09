@@ -46,6 +46,7 @@ jobs:
         run: |
           apt-get update
           apt-get install -y build-essential git libasound2-dev python3-pip binutils
+          pip3 install --upgrade pip
           pip3 install cmake
 
       - uses: actions/checkout@v4
@@ -58,7 +59,7 @@ jobs:
           path: chuck
 
       - name: Configure
-        run: cmake -B build -DCHUCK_SRC="${{ github.workspace }}/chuck/src" -DCMAKE_BUILD_TYPE=Release -DPHUCK_TESTS=ON ${{ matrix.cmake_extra }}
+        run: cmake -B build -DCHUCK_SRC="$GITHUB_WORKSPACE/chuck/src" -DCMAKE_BUILD_TYPE=Release -DPHUCK_TESTS=ON ${{ matrix.cmake_extra }}
         shell: bash
 
       - name: Build
