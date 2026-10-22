@@ -24,3 +24,27 @@ Class {
 	#category : 'PhuckLang',
 	#package : 'PhuckLang'
 }
+
+{ #category : 'as yet unclassified' }
+CkObject >> => aUGen [
+	^ CkChain new => self => aUGen
+]
+
+{ #category : 'as yet unclassified' }
+CkObject >> ckClassName [
+	"CkSawOsc and SawOsc both print as SawOsc"
+	^ self class name asString withoutPrefix: 'Ck'
+
+]
+
+{ #category : 'as yet unclassified' }
+CkObject >> ckPrefix [
+	"SqrOsc -> sqr, LPF -> lpf"
+	^ (self ckClassName withoutSuffix: 'Osc') asLowercase
+
+]
+
+{ #category : 'as yet unclassified' }
+CkObject >> ckWriteOn: aWriter [
+	aWriter writeUGen: self
+]
