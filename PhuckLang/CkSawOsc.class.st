@@ -3,7 +3,7 @@ Sawtooth wave oscillator.
 "
 Class {
 	#name : 'CkSawOsc',
-	#superclass : 'CkUGen',
+	#superclass : 'CkOsc',
 	#category : 'PhuckLang',
 	#package : 'PhuckLang'
 }

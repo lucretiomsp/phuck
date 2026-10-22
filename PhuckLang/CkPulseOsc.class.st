@@ -3,7 +3,7 @@ A pulse width oscillator.
 "
 Class {
 	#name : 'CkPulseOsc',
-	#superclass : 'CkUGen',
+	#superclass : 'CkOsc',
 	#category : 'PhuckLang',
 	#package : 'PhuckLang'
 }

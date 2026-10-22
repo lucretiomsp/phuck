@@ -3,10 +3,7 @@ Base class for stereo unit generators.
 "
 Class {
 	#name : 'CkUGenStereo',
-	#superclass : 'CkUGen',
-	#instVars : [
-		'outlet'
-	],
+	#superclass : 'CkUGenMulti',
 	#category : 'PhuckLang',
 	#package : 'PhuckLang'
 }

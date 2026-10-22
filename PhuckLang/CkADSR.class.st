@@ -3,7 +3,7 @@ This Envelope subclass implements a traditional ADSR (Attack, Decay, Sustain, Re
 "
 Class {
 	#name : 'CkADSR',
-	#superclass : 'CkUGen',
+	#superclass : 'CkEnvelope',
 	#category : 'PhuckLang',
 	#package : 'PhuckLang'
 }

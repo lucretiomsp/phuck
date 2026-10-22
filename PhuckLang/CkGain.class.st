@@ -4,6 +4,20 @@ A gain control unit generator. (All unit generators can already change their own
 Class {
 	#name : 'CkGain',
 	#superclass : 'CkUGen',
+	#instVars : [
+		'db'
+	],
 	#category : 'PhuckLang',
 	#package : 'PhuckLang'
 }
+
+{ #category : 'accessing' }
+CkGain >> db [ 
+^ db
+]
+
+{ #category : 'accessing' }
+CkGain >> db: aGainInDB [ 
+
+db := aGainInDB 
+]

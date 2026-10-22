@@ -3,7 +3,7 @@ A triangle wave oscillator.
 "
 Class {
 	#name : 'CkTriOsc',
-	#superclass : 'CkUGen',
+	#superclass : 'CkOsc',
 	#category : 'PhuckLang',
 	#package : 'PhuckLang'
 }
