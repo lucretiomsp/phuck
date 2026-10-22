@@ -1,0 +1,12 @@
+"
+A fractional-length digital delay-line using first-order linear interpolation. A fixed maximum length of 4095 and a delay of zero is set using the default constructor. Alternatively, the delay and maximum length can be set during instantiation with an overloaded constructor. Linear interpolation is an efficient technique for achieving fractional delay lengths, though it does introduce high-frequency signal attenuation to varying degrees depending on the fractional delay setting. The use of higher order Lagrange interpolators can typically improve (minimize) this attenuation characteristic. by Perry R. Cook and Gary P. Scavone, 1995 - 2002.
+
+
+
+"
+Class {
+	#name : 'CkDelayL',
+	#superclass : 'CkUGen',
+	#category : 'PhuckLang',
+	#package : 'PhuckLang'
+}

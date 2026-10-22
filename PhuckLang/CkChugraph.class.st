@@ -1,3 +1,9 @@
+"
+Base class for subgraph-based user-created in-language unit generators.
+
+
+
+"
 Class {
 	#name : 'CkChugraph',
 	#superclass : 'CkUGen',

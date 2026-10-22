@@ -1,3 +1,6 @@
+"
+A sine wave oscillator.
+"
 Class {
 	#name : 'CkSinOsc',
 	#superclass : 'CkUGen',

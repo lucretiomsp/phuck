@@ -1,3 +1,6 @@
+"
+Base class for all Phuck unit generator (UGen) types.
+"
 Class {
 	#name : 'CkUGen',
 	#superclass : 'CkObject',
