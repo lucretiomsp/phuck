@@ -1,21 +1,31 @@
 Class {
 	#name : 'CkChainTest',
 	#superclass : 'TestCase',
-	#instVars : [
-		'dac'
-	],
 	#category : 'Phuck-Tests-Lang',
 	#package : 'Phuck-Tests',
 	#tag : 'Lang'
 }
 
 { #category : 'tests' }
-CkChainTest >> testSqrOscToDac [
+CkChainTest >> testSliderBecomesGlobal [
+	| osc |
+	osc := SqrOsc new.
+	osc gain: CkSlider new.
 	self
-		assert: (CkSqrOsc new => dac) asPhuck
+		assert: (osc => CkDac new) asPhuck
 		equals: (String lf join: #(
+			'global float sqr1Gain;'
 			'SqrOsc sqr1 => dac;'
 			'while (1) {'
+			'  sqr1Gain => sqr1.gain;'
 			'  1::ms => now;'
 			'}' ))
+]
+
+{ #category : 'tests' }
+CkChainTest >> testSqrOscToDac [
+
+	self
+		assert: (CkSqrOsc new => CkDac new) asPhuck
+		equals: (String lf join: #( 'SqrOsc sqr1 => dac;' 'while (1) {' '  1::ms => now;' '}' ))
 ]

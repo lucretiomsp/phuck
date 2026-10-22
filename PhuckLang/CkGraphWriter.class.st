@@ -54,6 +54,18 @@ CkGraphWriter >> initialize [
 	loop := String new writeStream
 ]
 
+{ #category : 'instance creation' }
+CkGraphWriter >> newNameFor: aUGen [
+	"Numbered per program, so every asPhuck starts at sqr1"
+	| prefix |
+	prefix := aUGen ckPrefix.
+	counters add: prefix.
+	^ declared
+		at: aUGen
+		put: prefix , (counters occurrencesOf: prefix) printString
+
+]
+
 { #category : 'writing' }
 CkGraphWriter >> nextPutAll: aString [
 	body nextPutAll: aString
