@@ -9,7 +9,7 @@ Class {
 { #category : 'tests' }
 CkChainTest >> testSliderBecomesGlobal [
 	| osc |
-	osc := SqrOsc new.
+	osc := CkSqrOsc new.
 	osc gain: CkSlider new.
 	self
 		assert: (osc => CkDac new) asPhuck
