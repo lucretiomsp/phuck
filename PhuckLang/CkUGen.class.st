@@ -13,7 +13,7 @@ Class {
 	#package : 'PhuckLang'
 }
 
-{ #category : 'as yet unclassified' }
+{ #category : 'API' }
 CkUGen >> gain: aValue [
 	self param: #gain put: aValue
 ]
@@ -25,12 +25,12 @@ CkUGen >> initialize [
 
 ]
 
-{ #category : 'as yet unclassified' }
+{ #category : 'private' }
 CkUGen >> param: aSymbol put: aValue [
 	params at: aSymbol put: aValue
 ]
 
-{ #category : 'as yet unclassified' }
+{ #category : 'accessing' }
 CkUGen >> params [
 	^ params
 ]
