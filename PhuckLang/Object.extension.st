@@ -6,7 +6,16 @@ Object >> ckCode [
 ]
 
 { #category : '*PhuckLang' }
+Object >> ckCodeIn: aWriter [
+	^ self ckCode
+]
+
+{ #category : '*PhuckLang' }
+Object >> ckOperandIn: aWriter [
+	^ self ckCodeIn: aWriter
+]
+
+{ #category : '*PhuckLang' }
 Object >> ckWriteParam: aSymbol of: aName on: aWriter [
-	"Constants are set once, before the loop"
-	aWriter addInit: self ckCode , ' => ' , aName , '.' , aSymbol , ';'
+	aWriter addInit: (self ckCodeIn: aWriter) , ' => ' , aName , '.' , aSymbol , ';'
 ]

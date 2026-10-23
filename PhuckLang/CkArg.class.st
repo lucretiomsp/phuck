@@ -4,6 +4,7 @@ Class {
 	#instVars : [
 		'name'
 	],
-	#category : 'PhuckLang',
-	#package : 'PhuckLang'
+	#category : 'PhuckLang-Expressions',
+	#package : 'PhuckLang',
+	#tag : 'Expressions'
 }

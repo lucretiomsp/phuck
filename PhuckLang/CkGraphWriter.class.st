@@ -7,7 +7,8 @@ Class {
 		'globals',
 		'body',
 		'inits',
-		'loop'
+		'loop',
+		'pending'
 	],
 	#category : 'PhuckLang',
 	#package : 'PhuckLang'
@@ -44,22 +45,32 @@ CkGraphWriter >> contents [
 
 { #category : 'writing' }
 CkGraphWriter >> declare: aUGen [
-	| name |
-	name := self newNameFor: aUGen.
-	body nextPutAll: aUGen ckClassName , ' ' , name.
-	aUGen params keysAndValuesDo: [ :param :value |
-		value ckWriteParam: param of: name on: self ]
+	body nextPutAll: aUGen ckClassName , ' ' , (self newNameFor: aUGen).
+	pending add: aUGen
 ]
 
 { #category : 'initialization' }
 CkGraphWriter >> initialize [
-super initialize.
+
+	super initialize.
 	declared := IdentityDictionary new.
 	counters := Bag new.
 	globals := String new writeStream.
 	body := String new writeStream.
 	inits := String new writeStream.
-	loop := String new writeStream
+	loop := String new writeStream.
+	pending := OrderedCollection new
+]
+
+{ #category : 'writing' }
+CkGraphWriter >> nameOf: aUGen [
+	"A UGen that is only read, never heard, runs on blackhole"
+	(declared includesKey: aUGen) ifFalse: [
+		body
+			nextPutAll: aUGen ckClassName , ' ' , (self newNameFor: aUGen) , ' => blackhole;';
+			lf.
+		self writeParamsOf: aUGen ].
+	^ declared at: aUGen
 ]
 
 { #category : 'instance creation' }
@@ -82,10 +93,21 @@ CkGraphWriter >> nextPutAll: aString [
 
 { #category : 'writing' }
 CkGraphWriter >> writeChain: aCollection [
+	"Params come after the chain line, so they can add lines of their own"
 	aCollection
 		do: [ :each | each ckWriteOn: self ]
 		separatedBy: [ body nextPutAll: ' => ' ].
-	body nextPutAll: ';'; lf
+	body nextPutAll: ';'; lf.
+	[ pending isEmpty ] whileFalse: [ self writeParamsOf: pending removeFirst ]
+]
+
+{ #category : 'writing' }
+CkGraphWriter >> writeParamsOf: aUGen [
+	| name |
+	name := declared at: aUGen.
+	aUGen params keysAndValuesDo: [ :param :value |
+		value ckWriteParam: param of: name on: self ]
+
 ]
 
 { #category : 'writing' }

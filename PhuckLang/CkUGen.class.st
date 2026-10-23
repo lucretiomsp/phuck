@@ -26,6 +26,12 @@ CkUGen >> initialize [
 
 ]
 
+{ #category : 'API' }
+CkUGen >> last [
+	^ CkGetter ugen: self selector: #last
+
+]
+
 { #category : 'private' }
 CkUGen >> param: aSymbol put: aValue [
 	params at: aSymbol put: aValue

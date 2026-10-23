@@ -41,6 +41,13 @@ CkChainRunTest >> testGeneratedCodeCompiles [
 		assertCompiles: delay => CkGain new => delay
 ]
 
+{ #category : 'tests' }
+CkChainRunTest >> testReadUGenCompiles [
+	| lfo |
+	lfo := CkSinOsc new freq: 0.5.
+	self assertCompiles: (CkSinOsc new freq: 440 + (lfo last * 200)) => CkDac new
+]
+
 { #category : 'running' }
 CkChainRunTest >> testSliderGlobalIsRegistered [
 	"so setValue:parameter: sends sqr1Gain as a float"
