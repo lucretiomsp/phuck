@@ -53,11 +53,12 @@ CkGraphWriter >> declare: aUGen [
 
 { #category : 'initialization' }
 CkGraphWriter >> initialize [
-	super initialize.
+super initialize.
 	declared := IdentityDictionary new.
 	counters := Bag new.
 	globals := String new writeStream.
 	body := String new writeStream.
+	inits := String new writeStream.
 	loop := String new writeStream
 ]
 
