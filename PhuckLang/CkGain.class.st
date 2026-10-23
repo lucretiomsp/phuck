@@ -7,8 +7,9 @@ Class {
 	#instVars : [
 		'db'
 	],
-	#category : 'PhuckLang',
-	#package : 'PhuckLang'
+	#category : 'PhuckLang-UGen',
+	#package : 'PhuckLang',
+	#tag : 'UGen'
 }
 
 { #category : 'accessing' }

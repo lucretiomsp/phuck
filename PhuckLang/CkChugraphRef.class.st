@@ -4,6 +4,7 @@ Class {
 	#instVars : [
 		'ugenClass'
 	],
-	#category : 'PhuckLang',
-	#package : 'PhuckLang'
+	#category : 'PhuckLang-UGen',
+	#package : 'PhuckLang',
+	#tag : 'UGen'
 }

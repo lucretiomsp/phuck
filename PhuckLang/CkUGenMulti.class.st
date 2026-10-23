@@ -7,6 +7,7 @@ Class {
 	#instVars : [
 		'outlet'
 	],
-	#category : 'PhuckLang',
-	#package : 'PhuckLang'
+	#category : 'PhuckLang-UGen',
+	#package : 'PhuckLang',
+	#tag : 'UGen'
 }

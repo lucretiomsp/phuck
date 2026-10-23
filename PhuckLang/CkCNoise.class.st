@@ -7,8 +7,9 @@ A noise generator with multiple noise synthesis modes.
 Class {
 	#name : 'CkCNoise',
 	#superclass : 'CkUGen',
-	#category : 'PhuckLang',
-	#package : 'PhuckLang'
+	#category : 'PhuckLang-UGen',
+	#package : 'PhuckLang',
+	#tag : 'UGen'
 }
 
 { #category : 'API' }

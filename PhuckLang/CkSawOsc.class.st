@@ -4,8 +4,9 @@ Sawtooth wave oscillator.
 Class {
 	#name : 'CkSawOsc',
 	#superclass : 'CkOsc',
-	#category : 'PhuckLang',
-	#package : 'PhuckLang'
+	#category : 'PhuckLang-UGen',
+	#package : 'PhuckLang',
+	#tag : 'UGen'
 }
 
 { #category : 'accessing' }

@@ -7,6 +7,7 @@ A non-interpolating digital delay-line. A fixed maximum length of 4095 and a del
 Class {
 	#name : 'CkDelay',
 	#superclass : 'CkUGen',
-	#category : 'PhuckLang',
-	#package : 'PhuckLang'
+	#category : 'PhuckLang-UGen',
+	#package : 'PhuckLang',
+	#tag : 'UGen'
 }

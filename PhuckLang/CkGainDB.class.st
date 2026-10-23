@@ -4,6 +4,7 @@ The same as the Gain UGen, but the constructor sets the gain in deciBels rather 
 Class {
 	#name : 'CkGainDB',
 	#superclass : 'CkGain',
-	#category : 'PhuckLang',
-	#package : 'PhuckLang'
+	#category : 'PhuckLang-UGen',
+	#package : 'PhuckLang',
+	#tag : 'UGen'
 }

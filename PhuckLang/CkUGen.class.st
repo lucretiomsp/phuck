@@ -9,8 +9,9 @@ Class {
 		'outputs',
 		'params'
 	],
-	#category : 'PhuckLang',
-	#package : 'PhuckLang'
+	#category : 'PhuckLang-UGen',
+	#package : 'PhuckLang',
+	#tag : 'UGen'
 }
 
 { #category : 'API' }

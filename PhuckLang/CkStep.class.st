@@ -4,8 +4,9 @@ A step generator. Step behaves like Impulse, except that once a next value is se
 Class {
 	#name : 'CkStep',
 	#superclass : 'CkUGen',
-	#category : 'PhuckLang',
-	#package : 'PhuckLang'
+	#category : 'PhuckLang-UGen',
+	#package : 'PhuckLang',
+	#tag : 'UGen'
 }
 
 { #category : 'accessing' }

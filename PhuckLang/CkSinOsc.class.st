@@ -4,6 +4,7 @@ A sine wave oscillator.
 Class {
 	#name : 'CkSinOsc',
 	#superclass : 'CkUGen',
-	#category : 'PhuckLang',
-	#package : 'PhuckLang'
+	#category : 'PhuckLang-UGen',
+	#package : 'PhuckLang',
+	#tag : 'UGen'
 }

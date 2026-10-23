@@ -4,6 +4,7 @@ A fractional-length digital delay-line using a first-order allpass filter. A fix
 Class {
 	#name : 'CkDelayA',
 	#superclass : 'CkUGen',
-	#category : 'PhuckLang',
-	#package : 'PhuckLang'
+	#category : 'PhuckLang-UGen',
+	#package : 'PhuckLang',
+	#tag : 'UGen'
 }

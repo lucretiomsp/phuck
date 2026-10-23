@@ -7,6 +7,7 @@ A fractional-length digital delay-line using first-order linear interpolation. A
 Class {
 	#name : 'CkDelayL',
 	#superclass : 'CkUGen',
-	#category : 'PhuckLang',
-	#package : 'PhuckLang'
+	#category : 'PhuckLang-UGen',
+	#package : 'PhuckLang',
+	#tag : 'UGen'
 }

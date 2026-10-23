@@ -4,8 +4,9 @@ Base class for simple oscillator unit generators.
 Class {
 	#name : 'CkOsc',
 	#superclass : 'CkUGen',
-	#category : 'PhuckLang',
-	#package : 'PhuckLang'
+	#category : 'PhuckLang-UGen',
+	#package : 'PhuckLang',
+	#tag : 'UGen'
 }
 
 { #category : 'API' }

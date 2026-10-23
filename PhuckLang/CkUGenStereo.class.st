@@ -4,8 +4,9 @@ Base class for stereo unit generators.
 Class {
 	#name : 'CkUGenStereo',
 	#superclass : 'CkUGenMulti',
-	#category : 'PhuckLang',
-	#package : 'PhuckLang'
+	#category : 'PhuckLang-UGen',
+	#package : 'PhuckLang',
+	#tag : 'UGen'
 }
 
 { #category : 'LiveCoding  - SuperDirt' }

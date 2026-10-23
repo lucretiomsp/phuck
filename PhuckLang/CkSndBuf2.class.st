@@ -4,6 +4,7 @@ An interpolating sound buffer with two-channel output. Reads from a variety of u
 Class {
 	#name : 'CkSndBuf2',
 	#superclass : 'CkSndBuf',
-	#category : 'PhuckLang',
-	#package : 'PhuckLang'
+	#category : 'PhuckLang-UGen',
+	#package : 'PhuckLang',
+	#tag : 'UGen'
 }
