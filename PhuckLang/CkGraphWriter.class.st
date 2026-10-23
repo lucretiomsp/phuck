@@ -6,6 +6,7 @@ Class {
 		'counters',
 		'globals',
 		'body',
+		'inits',
 		'loop'
 	],
 	#category : 'PhuckLang',
@@ -18,17 +19,23 @@ CkGraphWriter >> addGlobal: aString [
 
 ]
 
+{ #category : 'adding' }
+CkGraphWriter >> addInit: aString [
+	inits nextPutAll: aString; lf
+]
+
 { #category : 'writing' }
 CkGraphWriter >> addToLoop: aString [
 	loop nextPutAll: '  '; nextPutAll: aString; lf
 ]
 
-{ #category : 'writing' }
+{ #category : 'adding' }
 CkGraphWriter >> contents [
 	^ String streamContents: [ :s |
 		s
 			nextPutAll: globals contents;
 			nextPutAll: body contents;
+			nextPutAll: inits contents;
 			nextPutAll: 'while (1) {'; lf;
 			nextPutAll: loop contents;
 			nextPutAll: '  1::ms => now;'; lf;
