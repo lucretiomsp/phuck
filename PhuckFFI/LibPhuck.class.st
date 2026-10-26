@@ -168,6 +168,11 @@ LibPhuck >> phuck_runCk: ck in: in out: out frames: frames [
 ]
 
 { #category : 'public - phuck' }
+LibPhuck >> phuck_run_graphicsCk: ck timeoutMs: timeoutMs [
+	^ self ffiCall: #(int phuck_run_graphics(phuck_t* ck, int timeoutMs))
+]
+
+{ #category : 'public - phuck' }
 LibPhuck >> phuck_sample_size [
 
 	^ self ffiCall: #(int phuck_sample_size())

@@ -270,6 +270,13 @@ PhuckVM >> run: aString [
 		yourself
 ]
 
+{ #category : 'as yet unclassified' }
+PhuckVM >> runGraphics [
+	"Run ChuGL's window loop. Blocks the image until the window is closed."
+	self ensureRunning.
+	^ (library phuck_run_graphicsCk: chuck timeoutMs: 2000) = 1
+]
+
 { #category : 'initialization' }
 PhuckVM >> sampleRate: anInteger [
 	self isRunning ifTrue: [ ^ self error: 'Set the sample rate before start' ].
