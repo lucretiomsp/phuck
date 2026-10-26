@@ -63,9 +63,22 @@ TurboPhuck class >> code [
 60 => global int timbNote;       global int timbGate;       global int timbIndex;       0.4 => global float timbLevel;
 60 => global int tomNote;        global int tomGate;        global int tomIndex;        0.4 => global float tomLevel;
 
-// ZdLoopPlayer
-60 => global int loopNote;  global int loopGate;  global int loopIndex;  174 => global float performanceBPM;  0.6 => global float loopLevel;
-60 => global int drumsNote; global int drumsGate; global int drumsIndex;  0.6 => global float drumsLevel;
+// ZdLoopPlayer: loop
+60  => global int   loopNote;
+0   => global int   loopGate;
+0   => global int   loopIndex;
+174 => global float performanceBPM;
+0.4 => global float loopLevel;
+0   => global int   loopReverse;
+0   => global float loopPosition;
+
+// ZdLoopPlayer: drums
+60  => global int   drumsNote;
+0   => global int   drumsGate;
+0   => global int   drumsIndex;
+0.4 => global float drumsLevel;
+0   => global int   drumsReverse;
+0   => global float drumsPosition;
 
 // Hoover
 60  => global float hooverNote;
@@ -282,6 +295,8 @@ class ZdLoopPlayer extends Chugraph
     0   => int curIndex;
     60  => int curNote;
     0   => int curGate;
+    0   => int curReverse;
+    0.0 => float curPosition;
     174 => float curBpm;
     env.set(1::ms, 380::ms, 1.0, 120::ms);
     0.4 => buf.gain;
@@ -321,10 +336,12 @@ class ZdLoopPlayer extends Chugraph
         return files.size();
     }
 
-    fun void update(int n, int g, int i, float b, float l)
+    fun void update(int n, int g, int i, float b, float l, int r, float p)
     {
         setLevel(l);
         bpm(b);
+        reverse(r);
+        position(p);
         index(i);
         note(n);
         gate(g);
@@ -364,21 +381,56 @@ class ZdLoopPlayer extends Chugraph
         updateRate();
     }
 
+    // 1 plays backwards; while playing, turns around at the current playhead
+    fun void reverse(int r)
+    {
+        (r != 0) => int on;
+        if (on == curReverse) return;
+        on => curReverse;
+        updateRate();
+        if (!curGate) park();
+    }
+
+    // start point: 0 = start of the loop as heard, 1 = its end; jumps there while playing
+    fun void position(float p)
+    {
+        if (p == curPosition) return;
+        p => curPosition;
+        if (curGate && files.size() > 0) startFrame() => buf.pos;
+    }
+
     fun void trigger()
     {
         if (files.size() == 0) return;
         updateRate();
-        0 => buf.pos;
+        startFrame() => buf.pos;
         env.keyOn();
     }
 
-    // bpm sync times transposition: note 60 = in sync
+    // bpm sync times transposition (note 60 = in sync), negative when reversed
     fun void updateRate()
     {
         if (files.size() == 0) return;
         1.0 => float ratio;
         if (origBpms[curIndex] > 0) curBpm / origBpms[curIndex] => ratio;
-        ratio * Math.pow(2.0, (curNote - 60) / 12.0) => buf.rate;
+        ratio * Math.pow(2.0, (curNote - 60) / 12.0) => ratio;
+        if (curReverse) -ratio => ratio;
+        ratio => buf.rate;
+    }
+
+    // playhead for curPosition; reversed, the position counts from the end of the file
+    fun int startFrame()
+    {
+        Math.max(0.0, Math.min(1.0, curPosition)) => float p;
+        if (curReverse) 1.0 - p => p;
+        return (p * (buf.samples() - 1)) $ int;
+    }
+
+    // playhead where nothing plays in the current direction
+    fun void park()
+    {
+        if (curReverse) 0 => buf.pos;
+        else buf.samples() => buf.pos;
     }
 
     fun int wrap(int i)
@@ -391,8 +443,8 @@ class ZdLoopPlayer extends Chugraph
         i => curIndex;
         dirPath + files[curIndex] => buf.read;
         updateRate();
-        if (curGate) 0 => buf.pos;
-        else buf.samples() => buf.pos;
+        if (curGate) startFrame() => buf.pos;
+        else park();
     }
 
     // pipe tag first (myBassLoop|128.wav), else first number in 60..250, else 0
@@ -699,8 +751,8 @@ while (1::ms => now)
     tom.update(tomNote, tomGate, tomIndex, tomLevel);
 
     // ZdLoopPlayer
-    loop.update(loopNote, loopGate, loopIndex, performanceBPM, loopLevel);
-    drums.update(drumsNote, drumsGate, drumsIndex, performanceBPM, drumsLevel);
+    loop.update(loopNote, loopGate, loopIndex, performanceBPM, loopLevel, loopReverse, loopPosition);
+    drums.update(drumsNote, drumsGate, drumsIndex, performanceBPM, drumsLevel, drumsReverse, drumsPosition);
 
     // Synths
     hoover.tick(hooverNote, hooverGate, hooverLevel);
