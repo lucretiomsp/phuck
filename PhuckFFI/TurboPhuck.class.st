@@ -71,6 +71,8 @@ TurboPhuck class >> code [
 0.4 => global float loopLevel;
 0   => global int   loopReverse;
 0   => global float loopPosition;
+-1  => global float loopSlice;
+0   => global float loopLength;
 
 // ZdLoopPlayer: drums
 60  => global int   drumsNote;
@@ -79,6 +81,8 @@ TurboPhuck class >> code [
 0.4 => global float drumsLevel;
 0   => global int   drumsReverse;
 0   => global float drumsPosition;
+-1  => global float drumsSlice;
+0   => global float drumsLength;
 
 // Hoover
 60  => global float hooverNote;
@@ -297,6 +301,8 @@ class ZdLoopPlayer extends Chugraph
     0   => int curGate;
     0   => int curReverse;
     0.0 => float curPosition;
+    -1.0 => float curSlice;
+    0.0 => float curLength;
     174 => float curBpm;
     env.set(1::ms, 380::ms, 1.0, 120::ms);
     0.4 => buf.gain;
@@ -336,11 +342,13 @@ class ZdLoopPlayer extends Chugraph
         return files.size();
     }
 
-    fun void update(int n, int g, int i, float b, float l, int r, float p)
+    fun void update(int n, int g, int i, float b, float l, int r, float p, float sl, float len)
     {
         setLevel(l);
         bpm(b);
         reverse(r);
+        bars(len);
+        slice(sl);
         position(p);
         index(i);
         note(n);
@@ -391,11 +399,35 @@ class ZdLoopPlayer extends Chugraph
         if (!curGate) park();
     }
 
-    // start point: 0 = start of the loop as heard, 1 = its end; jumps there while playing
+    // offset from the start point along the playback direction, 0..1 of the file
     fun void position(float p)
     {
         if (p == curPosition) return;
         p => curPosition;
+        jump();
+    }
+
+    // start step in 16ths of the loop, fractions allowed, wraps; negative = whole loop;
+    // reversed, the same 16th plays backwards
+    fun void slice(float s)
+    {
+        if (s == curSlice) return;
+        s => curSlice;
+        jump();
+    }
+
+    // loop length in bars for the 16th grid, 0 = worked out from the file bpm
+    fun void bars(float b)
+    {
+        if (b < 0) 0.0 => b;
+        if (b == curLength) return;
+        b => curLength;
+        jump();
+    }
+
+    // while playing, move the playhead to the new start point
+    fun void jump()
+    {
         if (curGate && files.size() > 0) startFrame() => buf.pos;
     }
 
@@ -418,12 +450,34 @@ class ZdLoopPlayer extends Chugraph
         ratio => buf.rate;
     }
 
-    // playhead for curPosition; reversed, the position counts from the end of the file
+    // file frames in one 16th: from loopLength if set, else from the file bpm, else 1 bar
+    fun float stepFrames()
+    {
+        buf.samples() => int n;
+        if (curLength > 0) return n / (16.0 * curLength);
+        if (origBpms[curIndex] > 0)
+            return (15.0 / origBpms[curIndex]) * (n / (buf.length() / second));
+        return n / 16.0;
+    }
+
+    // start of the 16th (its end when reversed, whole file when slicing is off),
+    // moved by curPosition along the playback direction
     fun int startFrame()
     {
-        Math.max(0.0, Math.min(1.0, curPosition)) => float p;
-        if (curReverse) 1.0 - p => p;
-        return (p * (buf.samples() - 1)) $ int;
+        buf.samples() => int n;
+        0.0 => float from;
+        n $ float => float to;
+        if (curSlice >= 0)
+        {
+            stepFrames() => float step;
+            Math.max(1.0, Math.round(n / step)) => float steps;
+            curSlice - steps * Math.floor(curSlice / steps) => float k;
+            k * step => from;
+            (k + 1) * step => to;
+        }
+        from + curPosition * n => float p;
+        if (curReverse) to - curPosition * n => p;
+        return Math.max(0.0, Math.min(n - 1.0, p)) $ int;
     }
 
     // playhead where nothing plays in the current direction
@@ -751,8 +805,10 @@ while (1::ms => now)
     tom.update(tomNote, tomGate, tomIndex, tomLevel);
 
     // ZdLoopPlayer
-    loop.update(loopNote, loopGate, loopIndex, performanceBPM, loopLevel, loopReverse, loopPosition);
-    drums.update(drumsNote, drumsGate, drumsIndex, performanceBPM, drumsLevel, drumsReverse, drumsPosition);
+    loop.update(loopNote, loopGate, loopIndex, performanceBPM, loopLevel,
+                loopReverse, loopPosition, loopSlice, loopLength);
+    drums.update(drumsNote, drumsGate, drumsIndex, performanceBPM, drumsLevel,
+                 drumsReverse, drumsPosition, drumsSlice, drumsLength);
 
     // Synths
     hoover.tick(hooverNote, hooverGate, hooverLevel);
