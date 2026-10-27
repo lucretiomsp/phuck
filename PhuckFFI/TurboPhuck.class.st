@@ -752,6 +752,9 @@ ZdSampler speakspell(turbo + "/speakspell") => master;
 ZdSampler tamb(turbo + "/tamb")             => master;
 ZdSampler timb(turbo + "/timb")             => master;
 ZdSampler tom(turbo + "/tom")               => master;
+ZdSampler pad(turbo + "/pad")               => master;
+
+
 
 // ZdLoopPlayer
 ZdLoopPlayer loop(turbo + "/loop")   => master;
@@ -805,6 +808,7 @@ while (1::ms => now)
     tamb.update(tambNote, tambGate, tambIndex, tambLevel);
     timb.update(timbNote, timbGate, timbIndex, timbLevel);
     tom.update(tomNote, tomGate, tomIndex, tomLevel);
+    pad.update(padNote, padGate, padIndex, padLevel);
 
     // ZdLoopPlayer
     loop.update(loopNote, loopGate, loopIndex, performanceBPM, loopLevel,
