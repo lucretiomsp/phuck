@@ -21,7 +21,8 @@ Class {
 TurboPhuck class >> code [
 
 	| turbo |
-	turbo := (FileLocator imageDirectory / 'TurboSamples') asFileReference asChuckPath.
+	turbo := (FileLocator imageDirectory / 'TurboSamples')
+		         asFileReference asChuckPath.
 	^ '// ===================== GLOBALS =====================
 // Master
 0.8 => global float masterLevel;
@@ -63,6 +64,7 @@ TurboPhuck class >> code [
 60 => global int timbNote;       global int timbGate;       global int timbIndex;       0.4 => global float timbLevel;
 60 => global int tomNote;        global int tomGate;        global int tomIndex;        0.4 => global float tomLevel;
 
+60 => global int padNote;        global int padGate;        global int padIndex;        0.4 => global float padLevel;
 // ZdLoopPlayer: loop
 60  => global int   loopNote;
 0   => global int   loopGate;
