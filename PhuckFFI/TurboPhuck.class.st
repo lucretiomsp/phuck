@@ -12,9 +12,9 @@ Class {
 		'tpPerf',
 		'tpVm'
 	],
-	#category : 'PhuckFFI-Core',
+	#category : 'PhuckFFI-TurboPhuck',
 	#package : 'PhuckFFI',
-	#tag : 'Core'
+	#tag : 'TurboPhuck'
 }
 
 { #category : 'defaults' }
@@ -830,10 +830,9 @@ while (1::ms => now)
 { #category : 'defaults' }
 TurboPhuck class >> codeWithOSCSender [
 
-	| turbo |
-	turbo := (FileLocator imageDirectory / 'TurboSamples')
-		         asFileReference asChuckPath.
-	^ '// ===================== GLOBALS =====================
+	| root |
+	root := (FileLocator imageDirectory / 'TurboSamples') asFileReference.
+	^ (TurboSampleCodegen new root: root; expand: '// ===================== GLOBALS =====================
 // Master
 0.8 => global float masterLevel;
 
@@ -851,52 +850,8 @@ TurboPhuck class >> codeWithOSCSender [
 0 => global float beeThreeGate;  60 => global float beeThreeNote;  0.5 => global float beeThreeLevel;
 0 => global float sitarGate;     60 => global float sitarNote;     0.5 => global float sitarLevel;
 
-// ZdSampler
-60 => global int bleepNote;      global int bleepGate;      global int bleepIndex;      0.4 => global float bleepLevel;
-60 => global int blipNote;       global int blipGate;       global int blipIndex;       0.4 => global float blipLevel;
-60 => global int bongoNote;      global int bongoGate;      global int bongoIndex;      0.4 => global float bongoLevel;
-60 => global int chNote;         global int chGate;         global int chIndex;         0.4 => global float chLevel;
-60 => global int clapNote;       global int clapGate;       global int clapIndex;       0.4 => global float clapLevel;
-60 => global int claveNote;      global int claveGate;      global int claveIndex;      0.4 => global float claveLevel;
-60 => global int congaNote;      global int congaGate;      global int congaIndex;      0.4 => global float congaLevel;
-60 => global int cowbellNote;    global int cowbellGate;    global int cowbellIndex;    0.4 => global float cowbellLevel;
-60 => global int crashNote;      global int crashGate;      global int crashIndex;      0.4 => global float crashLevel;
-60 => global int fx2Note;        global int fx2Gate;        global int fx2Index;        0.4 => global float fx2Level;
-60 => global int kickNote;       global int kickGate;       global int kickIndex;       0.4 => global float kickLevel;
-60 => global int ohNote;         global int ohGate;         global int ohIndex;         0.4 => global float ohLevel;
-60 => global int ravekickNote;   global int ravekickGate;   global int ravekickIndex;   0.4 => global float ravekickLevel;
-60 => global int rideNote;       global int rideGate;       global int rideIndex;       0.4 => global float rideLevel;
-60 => global int rimNote;        global int rimGate;        global int rimIndex;        0.4 => global float rimLevel;
-60 => global int shakerNote;     global int shakerGate;     global int shakerIndex;     0.4 => global float shakerLevel;
-60 => global int snareNote;      global int snareGate;      global int snareIndex;      0.4 => global float snareLevel;
-60 => global int speakspellNote; global int speakspellGate; global int speakspellIndex; 0.4 => global float speakspellLevel;
-60 => global int tambNote;       global int tambGate;       global int tambIndex;       0.4 => global float tambLevel;
-60 => global int timbNote;       global int timbGate;       global int timbIndex;       0.4 => global float timbLevel;
-60 => global int tomNote;        global int tomGate;        global int tomIndex;        0.4 => global float tomLevel;
-
-60 => global int bassote;        global int bassGate;        global int bassIndex;        0.4 => global float bassLevel;
-
-60 => global int padNote;        global int padGate;        global int padIndex;        0.4 => global float padLevel;
-// ZdLoopPlayer: loop
-60  => global int   loopNote;
-0   => global int   loopGate;
-0   => global int   loopIndex;
+//@GLOBALS
 174 => global float performanceBPM;
-0.4 => global float loopLevel;
-0   => global int   loopReverse;
-0   => global float loopPosition;
--1  => global float loopSlice;
-0   => global float loopLength;
-
-// ZdLoopPlayer: drums
-60  => global int   drumsNote;
-0   => global int   drumsGate;
-0   => global int   drumsIndex;
-0.4 => global float drumsLevel;
-0   => global int   drumsReverse;
-0   => global float drumsPosition;
--1  => global float drumsSlice;
-0   => global float drumsLength;
 
 // Hoover
 60  => global float hooverNote;
@@ -1555,37 +1510,8 @@ float stkLastNote[12];
 float stkLastGate[12];
 for (0 => int i; i < 12; i++) -1.0 => stkLastNote[i];
 
-// ZdSampler
 "TURBO_ROOT" => string turbo;
-ZdSampler bleep(turbo + "/bleep")           => master;
-ZdSampler blip(turbo + "/blip")             => master;
-ZdSampler bongo(turbo + "/bongo")           => master;
-ZdSampler ch(turbo + "/ch")                 => master;
-ZdSampler clap(turbo + "/clap")             => master;
-ZdSampler clave(turbo + "/clave")           => master;
-ZdSampler conga(turbo + "/conga")           => master;
-ZdSampler cowbell(turbo + "/cowbell")       => master;
-ZdSampler crash(turbo + "/crash")           => master;
-ZdSampler fx2(turbo + "/fx2")               => master;
-ZdSampler kick(turbo + "/kick")             => master;
-ZdSampler oh(turbo + "/oh")                 => master;
-ZdSampler ravekick(turbo + "/ravekick")     => master;
-ZdSampler ride(turbo + "/ride")             => master;
-ZdSampler rim(turbo + "/rim")               => master;
-ZdSampler shaker(turbo + "/shaker")         => master;
-ZdSampler snare(turbo + "/snare")           => master;
-ZdSampler speakspell(turbo + "/speakspell") => master;
-ZdSampler tamb(turbo + "/tamb")             => master;
-ZdSampler timb(turbo + "/timb")             => master;
-ZdSampler tom(turbo + "/tom")               => master;
-ZdSampler pad(turbo + "/pad")               => master;
-ZdSampler bass(turbo + "/bass")               => master;
-
-
-
-// ZdLoopPlayer
-ZdLoopPlayer loop(turbo + "/loop")   => master;
-ZdLoopPlayer drums(turbo + "/drums") => master;
+//@GRAPH
 
 // Synths
 Hoover hoover => master;
@@ -1613,36 +1539,7 @@ while (1::ms => now)
     stkVoice(b3,        b3Amp,        stkLastNote, stkLastGate, 10, beeThreeNote,  beeThreeGate,  beeThreeLevel);
     stkVoice(sitar,     sitarAmp,     stkLastNote, stkLastGate, 11, sitarNote,     sitarGate,     sitarLevel);
 
-    // ZdSampler
-    bleep.update(bleepNote, bleepGate, bleepIndex, bleepLevel);
-    blip.update(blipNote, blipGate, blipIndex, blipLevel);
-    bongo.update(bongoNote, bongoGate, bongoIndex, bongoLevel);
-    ch.update(chNote, chGate, chIndex, chLevel);
-    clap.update(clapNote, clapGate, clapIndex, clapLevel);
-    clave.update(claveNote, claveGate, claveIndex, claveLevel);
-    conga.update(congaNote, congaGate, congaIndex, congaLevel);
-    cowbell.update(cowbellNote, cowbellGate, cowbellIndex, cowbellLevel);
-    crash.update(crashNote, crashGate, crashIndex, crashLevel);
-    fx2.update(fx2Note, fx2Gate, fx2Index, fx2Level);
-    kick.update(kickNote, kickGate, kickIndex, kickLevel);
-    oh.update(ohNote, ohGate, ohIndex, ohLevel);
-    ravekick.update(ravekickNote, ravekickGate, ravekickIndex, ravekickLevel);
-    ride.update(rideNote, rideGate, rideIndex, rideLevel);
-    rim.update(rimNote, rimGate, rimIndex, rimLevel);
-    shaker.update(shakerNote, shakerGate, shakerIndex, shakerLevel);
-    snare.update(snareNote, snareGate, snareIndex, snareLevel);
-    speakspell.update(speakspellNote, speakspellGate, speakspellIndex, speakspellLevel);
-    tamb.update(tambNote, tambGate, tambIndex, tambLevel);
-    timb.update(timbNote, timbGate, timbIndex, timbLevel);
-    tom.update(tomNote, tomGate, tomIndex, tomLevel);
-    pad.update(padNote, padGate, padIndex, padLevel);
-    bass.update(bassNote, bassGate, bassIndex, bassLevel);
-
-    // ZdLoopPlayer
-    loop.update(loopNote, loopGate, loopIndex, performanceBPM, loopLevel,
-                loopReverse, loopPosition, loopSlice, loopLength);
-    drums.update(drumsNote, drumsGate, drumsIndex, performanceBPM, drumsLevel,
-                 drumsReverse, drumsPosition, drumsSlice, drumsLength);
+//@UPDATES
 
     // Synths
     hoover.tick(hooverNote, hooverGate, hooverLevel);
@@ -1667,37 +1564,14 @@ while (1::ms => now)
     trigEvent("beeThree",   beeThreeGate,   beeThreeNote);
     trigEvent("sitar",      sitarGate,      sitarNote);
 
-    trigEvent("bleep",      bleepGate,      bleepNote);
-    trigEvent("blip",       blipGate,       blipNote);
-    trigEvent("bongo",      bongoGate,      bongoNote);
-    trigEvent("ch",         chGate,         chNote);
-    trigEvent("clap",       clapGate,       clapNote);
-    trigEvent("clave",      claveGate,      claveNote);
-    trigEvent("conga",      congaGate,      congaNote);
-    trigEvent("cowbell",    cowbellGate,    cowbellNote);
-    trigEvent("crash",      crashGate,      crashNote);
-    trigEvent("fx2",        fx2Gate,        fx2Note);
-    trigEvent("kick",       kickGate,       kickNote);
-    trigEvent("oh",         ohGate,         ohNote);
-    trigEvent("ravekick",   ravekickGate,   ravekickNote);
-    trigEvent("ride",       rideGate,       rideNote);
-    trigEvent("rim",        rimGate,        rimNote);
-    trigEvent("shaker",     shakerGate,     shakerNote);
-    trigEvent("snare",      snareGate,      snareNote);
-    trigEvent("speakspell", speakspellGate, speakspellNote);
-    trigEvent("tamb",       tambGate,       tambNote);
-    trigEvent("timb",       timbGate,       timbNote);
-    trigEvent("tom",        tomGate,        tomNote);
-    trigEvent("pad",        padGate,        padNote);
-
-    trigEvent("loop",       loopGate,       loopNote);
-    trigEvent("drums",      drumsGate,      drumsNote);
+//@EVENTS
 
     trigEvent("hoover",     hooverGate,     hooverNote);
     trigEvent("acid",       acidGate,       acidNote);
     trigEvent("reese",      reeseGate,      reeseNote);
     trigEvent("kick99",     kick99Gate,     kick99Note);
-}' copyReplaceAll: 'TURBO_ROOT' with: turbo
+}')
+		copyReplaceAll: 'TURBO_ROOT' with: root asChuckPath
 ]
 
 { #category : 'listing' }
@@ -1869,7 +1743,8 @@ TurboPhuck >> initialize [
 	super initialize.
 	self class tpPerf resetAllSequencers.
 	self class tpPerf maxStepNumber: SmallInteger maxVal.
-	self class tpPerf removeAll
+	self class tpPerf removeAll.
+	self class tpPerf bpm: 147.
 ]
 
 { #category : 'playing' }
@@ -1888,6 +1763,16 @@ TurboPhuck >> mute: aSymbol [
 TurboPhuck >> muteAll [
 
 	self class tpPerf muteAll
+]
+
+{ #category : 'splitjoin' }
+TurboPhuck >> nameFor: aFolder [
+	"folder name as a ChucK identifier"
+	| name |
+	name := aFolder basename select: [ :c | c isAlphaNumeric and: [ c asInteger < 128 ] ].
+	(name notEmpty and: [ name first isLetter ])
+		ifFalse: [ self error: 'no ChucK name possible for folder ', aFolder basename ].
+	^ name
 ]
 
 { #category : 'running' }
