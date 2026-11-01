@@ -874,6 +874,8 @@ TurboPhuck class >> codeWithOSCSender [
 60 => global int timbNote;       global int timbGate;       global int timbIndex;       0.4 => global float timbLevel;
 60 => global int tomNote;        global int tomGate;        global int tomIndex;        0.4 => global float tomLevel;
 
+60 => global int bassote;        global int bassGate;        global int bassIndex;        0.4 => global float bassLevel;
+
 60 => global int padNote;        global int padGate;        global int padIndex;        0.4 => global float padLevel;
 // ZdLoopPlayer: loop
 60  => global int   loopNote;
@@ -1577,6 +1579,7 @@ ZdSampler tamb(turbo + "/tamb")             => master;
 ZdSampler timb(turbo + "/timb")             => master;
 ZdSampler tom(turbo + "/tom")               => master;
 ZdSampler pad(turbo + "/pad")               => master;
+ZdSampler bass(turbo + "/bass")               => master;
 
 
 
@@ -1633,6 +1636,7 @@ while (1::ms => now)
     timb.update(timbNote, timbGate, timbIndex, timbLevel);
     tom.update(tomNote, tomGate, tomIndex, tomLevel);
     pad.update(padNote, padGate, padIndex, padLevel);
+    bass.update(bassNote, bassGate, bassIndex, bassLevel);
 
     // ZdLoopPlayer
     loop.update(loopNote, loopGate, loopIndex, performanceBPM, loopLevel,
