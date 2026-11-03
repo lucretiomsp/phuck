@@ -6,8 +6,7 @@ Class {
 	#superclass : 'Object',
 	#instVars : [
 		'tpPerf',
-		'freq',
-		'pitchShiftKnob'
+		'freq'
 	],
 	#classInstVars : [
 		'tpPerf',
@@ -839,6 +838,7 @@ TurboPhuck class >> codeWithOSCSender [
 
 // EFFECTS
 1 => global float pitchShift;
+20.0 => global float highpassFreq;
 
 // STK
 0 => global float bellGate;      60 => global float bellNote;      0.5 => global float bellGain;
@@ -1491,8 +1491,9 @@ fun void trigEvent(string name, float gate, float note)
 }
 
 // ===================== GRAPH =====================
-Gain master => Dyno lim => PitShift shifter => dac;
+Gain master => Dyno lim => PitShift shifter => HPF highPass => dac;
 1 => shifter.mix;
+highpassFreq => highPass.freq;
 pitchShift => shifter.shift;
 masterGain => master.gain;
 lim.limit();
@@ -1533,6 +1534,7 @@ while (1::ms => now)
 
     // Effects
     pitchShift => shifter.shift;
+    highpassFreq => highPass.freq;
 
     // STK
     stkVoice(bell,      bellAmp,      stkLastNote, stkLastGate, 0,  bellNote,      bellGate,      bellGain);
@@ -1742,6 +1744,13 @@ TurboPhuck class >> tpVm [
 TurboPhuck >> bpm: aNumber [
 self class tpPerf freq: aNumber bpm.
 PhuckVM uniqueInstance setValue: aNumber parameter: 'performanceBPM'.	
+
+
+]
+
+{ #category : 'API - changes' }
+TurboPhuck >> highpassFreq:  aFloat [
+PhuckVM uniqueInstance setValue: aFloat parameter: 'highPassFreq'.	
 
 
 ]
