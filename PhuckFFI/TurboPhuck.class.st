@@ -834,21 +834,24 @@ TurboPhuck class >> codeWithOSCSender [
 	root := (FileLocator imageDirectory / 'TurboSamples') asFileReference.
 	^ (TurboSampleCodegen new root: root; expand: '// ===================== GLOBALS =====================
 // Master
-0.8 => global float masterLevel;
+0.8 => global float masterGain;
+
+// EFFECTS
+1 => global float pitchShift;
 
 // STK
-0 => global float bellGate;      60 => global float bellNote;      0.5 => global float bellLevel;
-0 => global float brassGate;     60 => global float brassNote;     0.5 => global float brassLevel;
-0 => global float blowGate;      60 => global float blowNote;      0.5 => global float blowLevel;
-0 => global float clarinetGate;  60 => global float clarinetNote;  0.5 => global float clarinetLevel;
-0 => global float moogGate;      60 => global float moogNote;      0.5 => global float moogLevel;
-0 => global float stkShakerGate; 60 => global float stkShakerNote; 0.5 => global float stkShakerLevel;
-0 => global float barGate;       60 => global float barNote;       0.5 => global float barLevel;
-0 => global float flutGate;      60 => global float flutNote;      0.5 => global float flutLevel;
-0 => global float rhodeyGate;    60 => global float rhodeyNote;    0.5 => global float rhodeyLevel;
-0 => global float mandolinGate;  60 => global float mandolinNote;  0.5 => global float mandolinLevel;
-0 => global float beeThreeGate;  60 => global float beeThreeNote;  0.5 => global float beeThreeLevel;
-0 => global float sitarGate;     60 => global float sitarNote;     0.5 => global float sitarLevel;
+0 => global float bellGate;      60 => global float bellNote;      0.5 => global float bellGain;
+0 => global float brassGate;     60 => global float brassNote;     0.5 => global float brassGain;
+0 => global float blowGate;      60 => global float blowNote;      0.5 => global float blowGain;
+0 => global float clarinetGate;  60 => global float clarinetNote;  0.5 => global float clarinetGain;
+0 => global float moogGate;      60 => global float moogNote;      0.5 => global float moogGain;
+0 => global float stkShakerGate; 60 => global float stkShakerNote; 0.5 => global float stkShakerGain;
+0 => global float barGate;       60 => global float barNote;       0.5 => global float barGain;
+0 => global float flutGate;      60 => global float flutNote;      0.5 => global float flutGain;
+0 => global float rhodeyGate;    60 => global float rhodeyNote;    0.5 => global float rhodeyGain;
+0 => global float mandolinGate;  60 => global float mandolinNote;  0.5 => global float mandolinGain;
+0 => global float beeThreeGate;  60 => global float beeThreeNote;  0.5 => global float beeThreeGain;
+0 => global float sitarGate;     60 => global float sitarNote;     0.5 => global float sitarGain;
 
 //@GLOBALS
 174 => global float performanceBPM;
@@ -856,12 +859,12 @@ TurboPhuck class >> codeWithOSCSender [
 // Hoover
 60  => global float hooverNote;
 0   => global float hooverGate;
-0.3 => global float hooverLevel;
+0.3 => global float hooverGain;
 
 // Acid
 48    => global float acidNote;
 0     => global float acidGate;
-0.6   => global float acidLevel;
+0.6   => global float acidGain;
 0.3   => global float acidCutoff;
 4.5   => global float acidResonance;
 0.64  => global float acidEnvMod;
@@ -872,7 +875,7 @@ TurboPhuck class >> codeWithOSCSender [
 // Reese
 48   => global float reeseNote;
 0    => global float reeseGate;
-0.5  => global float reeseLevel;
+0.5  => global float reeseGain;
 2    => global float reeseDetune;
 0.01 => global float reeseAttack;
 0.2  => global float reeseDecay;
@@ -882,7 +885,7 @@ TurboPhuck class >> codeWithOSCSender [
 // Kick99
 33   => global float kick99Note;
 0    => global float kick99Gate;
-0.8  => global float kick99Level;
+0.8  => global float kick99Gain;
 0.4  => global float kick99Decay;
 150  => global float kick99PitchAmt;
 0.03 => global float kick99PitchDecay;
@@ -975,7 +978,7 @@ class ZdSampler extends Chugraph
 
     fun void update(int n, int g, int i, float l)
     {
-        setLevel(l);
+        setGain(l);
         index(i);
         note(n);
         gate(g);
@@ -984,7 +987,7 @@ class ZdSampler extends Chugraph
     fun void setADSR(dur a, dur d, float s, dur r) { env.set(a, d, s, r); }
     fun void setRootNote(int n)       { n => rootNote; updateRate(); }
     fun void setRetrigOnNote(int on)  { on => retrigOnNote; }
-    fun void setLevel(float g)        { g => buf.gain; }
+    fun void setGain(float g)         { g => buf.gain; }
     fun int    numSamples()  { return files.size(); }
     fun string sampleName()  { return files.size() ? files[curIndex] : ""; }
 
@@ -1113,7 +1116,7 @@ class ZdLoopPlayer extends Chugraph
 
     fun void update(int n, int g, int i, float b, float l, int r, float p, float sl, float len)
     {
-        setLevel(l);
+        setGain(l);
         bpm(b);
         reverse(r);
         bars(len);
@@ -1124,7 +1127,7 @@ class ZdLoopPlayer extends Chugraph
         gate(g);
     }
 
-    fun void setLevel(float g) { g => buf.gain; }
+    fun void setGain(float g) { g => buf.gain; }
 
     fun void gate(int g)
     {
@@ -1332,7 +1335,7 @@ class Hoover extends Chugraph
     -1.0 => float lastNote;
     0 => float lastGate;
 
-    fun void tick(float note, float gate, float level)
+    fun void tick(float note, float gate, float gain)
     {
         if (note != lastNote)
         {
@@ -1343,7 +1346,7 @@ class Hoover extends Chugraph
             f * 0.5   => t1.freq;
             note => lastNote;
         }
-        level => out.gain;
+        gain => out.gain;
         if (gate == lastGate) return;
         if (gate > 0) { ampEnv.keyOn();  pitchEnv.keyOn(); }
         else          { ampEnv.keyOff(); pitchEnv.keyOff(); }
@@ -1360,7 +1363,7 @@ class Acid extends Chugraph
     1.0 => one.next;
     0 => float lastGate;
 
-    fun void tick(float note, float gate, float level, float cutoff, float res,
+    fun void tick(float note, float gate, float gain, float cutoff, float res,
                   float envMod, float decay, float tuning, float waveform)
     {
         if (gate != lastGate)
@@ -1383,7 +1386,7 @@ class Acid extends Chugraph
         Math.min(18000.0, 2.0 * Math.pow(10.0, 3.0 * n + 1.0)) => filt.freq;
         res => filt.Q;
         1.0 / (0.5 + cutoff) => comp.gain;
-        level => out.gain;
+        gain => out.gain;
     }
 }
 
@@ -1394,13 +1397,13 @@ class Reese extends Chugraph
     0.3 => o1.gain;  0.3 => o2.gain;
     0 => float lastGate;
 
-    fun void tick(float note, float gate, float level, float detune,
+    fun void tick(float note, float gate, float gain, float detune,
                   float a, float d, float s, float r)
     {
         Std.mtof(note) => float f;
         f => o1.freq;
         f + detune => o2.freq;
-        level => out.gain;
+        gain => out.gain;
         if (gate == lastGate) return;
         if (gate > 0)
         {
@@ -1432,13 +1435,13 @@ class Kick99 extends Chugraph
     second / samp => float sr;
     0 => float lastGate;
 
-    fun void tick(float note, float gate, float level, float decay,
+    fun void tick(float note, float gate, float gain, float decay,
                   float pitchAmt, float pitchDecay, float click)
     {
         Std.mtof(note) => body.freq;
         pitchAmt => pAmt.gain;
         click    => clickAmp.gain;
-        level    => out.gain;
+        gain     => out.gain;
         if (gate == lastGate) return;
         gate => lastGate;
         if (gate <= 0) return;
@@ -1458,9 +1461,9 @@ class Kick99 extends Chugraph
 // ===================== STK HELPER =====================
 // sets pitch only when the note changes, gates only on change
 fun void stkVoice(StkInstrument inst, Gain amp, float lastNote[], float lastGate[],
-                  int i, float note, float gate, float level)
+                  int i, float note, float gate, float gain)
 {
-    level => amp.gain;
+    gain => amp.gain;
     if (note != lastNote[i])
     {
         Std.mtof(note) => inst.freq;
@@ -1487,8 +1490,10 @@ fun void trigEvent(string name, float gate, float note)
 }
 
 // ===================== GRAPH =====================
-Gain master => Dyno lim => dac;
-masterLevel => master.gain;
+Gain master => Dyno lim => PitShift shifter => dac;
+1 => shifter.mix;
+pitchShift => shifter.shift;
+masterGain => master.gain;
 lim.limit();
 
 // STK
@@ -1523,31 +1528,34 @@ Kick99 kick99 => master;
 while (1::ms => now)
 {
     // Master
-    masterLevel => master.gain;
+    masterGain => master.gain;
+
+    // Effects
+    pitchShift => shifter.shift;
 
     // STK
-    stkVoice(bell,      bellAmp,      stkLastNote, stkLastGate, 0,  bellNote,      bellGate,      bellLevel);
-    stkVoice(brass,     brassAmp,     stkLastNote, stkLastGate, 1,  brassNote,     brassGate,     brassLevel);
-    stkVoice(blow,      blowAmp,      stkLastNote, stkLastGate, 2,  blowNote,      blowGate,      blowLevel);
-    stkVoice(clarinet,  clarinetAmp,  stkLastNote, stkLastGate, 3,  clarinetNote,  clarinetGate,  clarinetLevel);
-    stkVoice(moog,      moogAmp,      stkLastNote, stkLastGate, 4,  moogNote,      moogGate,      moogLevel);
-    stkVoice(stkShaker, stkShakerAmp, stkLastNote, stkLastGate, 5,  stkShakerNote, stkShakerGate, stkShakerLevel);
-    stkVoice(bar,       barAmp,       stkLastNote, stkLastGate, 6,  barNote,       barGate,       barLevel);
-    stkVoice(flut,      flutAmp,      stkLastNote, stkLastGate, 7,  flutNote,      flutGate,      flutLevel);
-    stkVoice(rhodey,    rhodeyAmp,    stkLastNote, stkLastGate, 8,  rhodeyNote,    rhodeyGate,    rhodeyLevel);
-    stkVoice(mandolin,  mandolinAmp,  stkLastNote, stkLastGate, 9,  mandolinNote,  mandolinGate,  mandolinLevel);
-    stkVoice(b3,        b3Amp,        stkLastNote, stkLastGate, 10, beeThreeNote,  beeThreeGate,  beeThreeLevel);
-    stkVoice(sitar,     sitarAmp,     stkLastNote, stkLastGate, 11, sitarNote,     sitarGate,     sitarLevel);
+    stkVoice(bell,      bellAmp,      stkLastNote, stkLastGate, 0,  bellNote,      bellGate,      bellGain);
+    stkVoice(brass,     brassAmp,     stkLastNote, stkLastGate, 1,  brassNote,     brassGate,     brassGain);
+    stkVoice(blow,      blowAmp,      stkLastNote, stkLastGate, 2,  blowNote,      blowGate,      blowGain);
+    stkVoice(clarinet,  clarinetAmp,  stkLastNote, stkLastGate, 3,  clarinetNote,  clarinetGate,  clarinetGain);
+    stkVoice(moog,      moogAmp,      stkLastNote, stkLastGate, 4,  moogNote,      moogGate,      moogGain);
+    stkVoice(stkShaker, stkShakerAmp, stkLastNote, stkLastGate, 5,  stkShakerNote, stkShakerGate, stkShakerGain);
+    stkVoice(bar,       barAmp,       stkLastNote, stkLastGate, 6,  barNote,       barGate,       barGain);
+    stkVoice(flut,      flutAmp,      stkLastNote, stkLastGate, 7,  flutNote,      flutGate,      flutGain);
+    stkVoice(rhodey,    rhodeyAmp,    stkLastNote, stkLastGate, 8,  rhodeyNote,    rhodeyGate,    rhodeyGain);
+    stkVoice(mandolin,  mandolinAmp,  stkLastNote, stkLastGate, 9,  mandolinNote,  mandolinGate,  mandolinGain);
+    stkVoice(b3,        b3Amp,        stkLastNote, stkLastGate, 10, beeThreeNote,  beeThreeGate,  beeThreeGain);
+    stkVoice(sitar,     sitarAmp,     stkLastNote, stkLastGate, 11, sitarNote,     sitarGate,     sitarGain);
 
 //@UPDATES
 
     // Synths
-    hoover.tick(hooverNote, hooverGate, hooverLevel);
-    acid.tick(acidNote, acidGate, acidLevel, acidCutoff, acidResonance,
+    hoover.tick(hooverNote, hooverGate, hooverGain);
+    acid.tick(acidNote, acidGate, acidGain, acidCutoff, acidResonance,
               acidEnvMod, acidDecay, acidTuning, acidWaveform);
-    reese.tick(reeseNote, reeseGate, reeseLevel, reeseDetune,
+    reese.tick(reeseNote, reeseGate, reeseGain, reeseDetune,
                reeseAttack, reeseDecay, reeseSustain, reeseRelease);
-    kick99.tick(kick99Note, kick99Gate, kick99Level, kick99Decay,
+    kick99.tick(kick99Note, kick99Gate, kick99Gain, kick99Decay,
                 kick99PitchAmt, kick99PitchDecay, kick99Click);
 
     // OSC events: one message per gate change
