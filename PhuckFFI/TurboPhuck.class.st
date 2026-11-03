@@ -6,7 +6,8 @@ Class {
 	#superclass : 'Object',
 	#instVars : [
 		'tpPerf',
-		'freq'
+		'freq',
+		'pitchShiftKnob'
 	],
 	#classInstVars : [
 		'tpPerf',
