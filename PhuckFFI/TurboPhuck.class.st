@@ -1783,6 +1783,13 @@ TurboPhuck >> nameFor: aFolder [
 	^ name
 ]
 
+{ #category : 'API - changes' }
+TurboPhuck >> pitchShift:  aFloat [
+PhuckVM uniqueInstance setValue: aFloat parameter: 'pitchShift'.	
+
+
+]
+
 { #category : 'running' }
 TurboPhuck >> play [
 
