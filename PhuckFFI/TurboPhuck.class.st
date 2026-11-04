@@ -888,8 +888,8 @@ TurboPhuck class >> codeWithOSCSender [
 // Kick99
 33   => global float kick99Note;
 0    => global float kick99Gate;
-0.8  => global float kick99Gain;
-0.4  => global float kick99Decay;
+0.4  => global float kick99Gain;
+0.1  => global float kick99Decay;
 150  => global float kick99PitchAmt;
 0.03 => global float kick99PitchDecay;
 0.3  => global float kick99Click;
@@ -1753,7 +1753,7 @@ while (1::ms => now)
               acidEnvMod, acidDecay, acidTuning, acidWaveform);
     reese.tick(reeseNote, reeseGate, reeseGain, reeseDetune,
                reeseAttack, reeseDecay, reeseSustain, reeseRelease);
-    kick99.tick(kick99Note, kick99Gate, kick99Gain, kick99Decay,
+    kick99.tick(kick99Note - 12, kick99Gate, kick99Gain, kick99Decay,
                 kick99PitchAmt, kick99PitchDecay, kick99Click);
     psgPlus.tick(psgPlusNote, psgPlusGate, psgPlusGain, psgPlusIndex, psgPlusLfoAmount,
                  psgPlusDSFreq, psgPlusQ, psgPlusAttack, psgPlusDecay, psgPlusSustain, psgPlusRelease);
@@ -1781,7 +1781,7 @@ while (1::ms => now)
     trigEvent("hoover",     hooverGate,     hooverNote);
     trigEvent("acid",       acidGate,       acidNote);
     trigEvent("reese",      reeseGate,      reeseNote);
-    trigEvent("kick99",     kick99Gate,     kick99Note);
+    trigEvent("kick99",     kick99Gate,     kick99Note -12);
     trigEvent("psgPlus",    psgPlusGate,    psgPlusNote);
     trigEvent("fm2Op",      fm2OpGate,      fm2OpNote);
     trigEvent("chordy",     chordyGate,     chordyNote);
