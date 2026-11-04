@@ -894,6 +894,39 @@ TurboPhuck class >> codeWithOSCSender [
 0.03 => global float kick99PitchDecay;
 0.3  => global float kick99Click;
 
+// PsgPlus
+60   => global float psgPlusNote;
+0    => global float psgPlusGate;
+0.25 => global float psgPlusGain;
+0    => global float psgPlusIndex;
+0    => global float psgPlusLfoAmount;
+180  => global float psgPlusDSFreq;
+3    => global float psgPlusQ;
+0.01 => global float psgPlusAttack;
+0.2  => global float psgPlusDecay;
+0.5  => global float psgPlusSustain;
+0.1  => global float psgPlusRelease;
+
+// Fm2Op
+60   => global float fm2OpNote;
+0    => global float fm2OpGate;
+0.25 => global float fm2OpGain;
+0    => global float fm2OpModIndex;
+1    => global float fm2OpModRatio;
+0.01 => global float fm2OpAttack;
+0.1  => global float fm2OpRelease;
+
+// Chordy
+60   => global float chordyNote;
+0    => global float chordyGate;
+0.45 => global float chordyGain;
+0    => global float chordyMode;
+0.2  => global float chordyCutoff;
+0.01 => global float chordyAttack;
+0.21 => global float chordyDecay;
+0.9  => global float chordySustain;
+0.18 => global float chordyRelease;
+
 // ===================== CLASSES =====================
 class AcidCubic extends Chugen
 {
@@ -1461,6 +1494,162 @@ class Kick99 extends Chugraph
     }
 }
 
+class PsgPlus extends Chugraph
+{
+    SqrOsc sqr => Gain mix => ADSR env => Gain vca => Gain out => outlet;
+    SawOsc saw => mix;
+    TriOsc tri => mix;
+    SubNoise noise => BPF reson => mix;
+
+    // pitch LFO: square in 0..1 as FM input, runs at audio rate inside the UGens
+    Step one;
+    1.0 => one.next;
+    SqrOsc lfo => Gain lfoSum => Gain lfoAmt;
+    one => lfoSum;
+    lfoAmt => sqr;  lfoAmt => saw;  lfoAmt => tri;
+    2 => sqr.sync;  2 => saw.sync;  2 => tri.sync;
+
+    // ring modulator: envelope output times 1 - 0.3 * sine at 242 Hz
+    SinOsc ringOsc => Gain ring => vca;
+    one => ring;
+    3 => vca.op;
+    242.0 => ringOsc.freq;
+    -0.3 => ringOsc.gain;
+
+    second / samp => float sr;
+    0.0 => float bandFreq;
+    0 => float lastGate;
+
+    fun void tick(float note, float gate, float gain, float index, float lfoAmount,
+                  float dsFreq, float q, float a, float d, float s, float r)
+    {
+        Std.mtof(note) => float f;
+        f => sqr.freq;
+        f => saw.freq;
+        f => tri.freq;
+        f / 48.0 => lfo.freq;
+        0.5 * lfoAmount * f => lfoAmt.gain;
+
+        // 0 square, 1 saw, 2 triangle, 3 noise
+        (Math.max(0.0, Math.min(3.0, index)) + 0.5) $ int => int i;
+        (i == 0 ? 0.3 : 0.0) => sqr.gain;
+        (i == 1 ? 0.3 : 0.0) => saw.gain;
+        (i == 2 ? 0.3 : 0.0) => tri.gain;
+
+        // noise: held at dsFreq, band at 3 x the LFO pitch smoothed like si.smoo,
+        // BPF peaks at 1 and fi.resonbp at Q, hence the gain
+        Math.max(1.0, sr / Math.max(20.0, dsFreq)) $ int => noise.rate;
+        3.0 * f * (1.0 + lfoAmount * 0.5 * (lfo.last() + 1.0)) => float target;
+        bandFreq + 0.0432 * (target - bandFreq) => bandFreq;
+        Math.max(20.0, Math.min(18000.0, bandFreq)) => reson.freq;
+        Math.max(1.0, q) => float res;
+        res => reson.Q;
+        (i == 3 ? res : 0.0) => reson.gain;
+
+        gain => out.gain;
+        if (gate == lastGate) return;
+        if (gate > 0)
+        {
+            0.0 => env.value;   // restart from 0 like en.adsr
+            env.set(a::second, d::second, s, r::second);
+            env.keyOn();
+        }
+        else env.keyOff();
+        gate => lastGate;
+    }
+}
+
+class Fm2Op extends Chugraph
+{
+    SinOsc modulator => SinOsc carrier => ADSR env => Gain out => outlet;
+    2 => carrier.sync;
+
+    0 => float lastGate;
+
+    fun void tick(float note, float gate, float gain, float modIndex, float modRatio,
+                  float a, float r)
+    {
+        Std.mtof(note) => float f;
+        f => carrier.freq;
+        f * modRatio => modulator.freq;
+        modIndex * 70.0 => modulator.gain;
+        gain => out.gain;
+        if (gate == lastGate) return;
+        if (gate > 0)
+        {
+            0.0 => env.value;   // restart from 0 like en.adsr
+            env.set(a::second, 1::ms, 1.0, r::second);
+            env.keyOn();
+        }
+        else env.keyOff();
+        gate => lastGate;
+    }
+}
+
+class Chordy extends Chugraph
+{
+    // filter built like fi.resonlp: poles, zeros, then its gain ramped at audio rate.
+    // LPF scales its input instead and loses the pop when the cutoff opens
+    SawOsc v1 => Gain mix => TwoPole poles => TwoZero zeros => Gain vca => ADSR ampEnv => Gain out => outlet;
+    SawOsc v2 => mix;
+    SawOsc v3 => mix;
+    Step one => ADSR filterEnv => blackhole;
+    one => Envelope filterGain => vca;
+    3 => vca.op;
+
+    1.0 => one.next;
+    1.0 => zeros.b0;  2.0 => zeros.b1;  1.0 => zeros.b2;
+    1::ms => filterGain.duration;
+    0.25 => v1.gain;  0.25 => v2.gain;  0.5 => v3.gain;
+
+    // start on the saw jump like the Faust phasors: the fifth stays phase locked to the root
+    0.75 => v1.phase;  0.75 => v2.phase;  0.75 => v3.phase;
+
+    // second voice as a ratio to the root: minor, major, sus4, sus2
+    [1.189, 1.259, 1.333, 1.125] @=> float intervals[];
+
+    second / samp => float sr;
+    0.0 => float cut;
+    0 => float lastGate;
+
+    fun void tick(float note, float gate, float gain, float mode, float cutoff,
+                  float a, float d, float s, float r)
+    {
+        Std.mtof(note) => float f;
+        f => v1.freq;
+        f * intervals[(Math.max(0.0, Math.min(3.0, mode)) + 0.5) $ int] => v2.freq;
+        f * 1.5 => v3.freq;
+
+        // cutoff smoothed like si.smoo, Q 4.8, coefficients as in tf2s
+        202.0 * cutoff + filterEnv.last() * 2000.0 => float target;
+        cut + 0.0432 * (target - cut) => cut;
+        1.0 / Math.tan(pi * Math.max(20.0, Math.min(18000.0, cut)) / sr) => float k;
+        k * k => float k2;
+        1.0 / (1.0 + k / 4.8 + k2) => float n;
+        2.0 * (1.0 - k2) * n => poles.a1;
+        (1.0 - k / 4.8 + k2) * n => poles.a2;
+        n => filterGain.target;
+
+        gain => out.gain;
+        if (gate == lastGate) return;
+        if (gate > 0)
+        {
+            0.0 => ampEnv.value;   // restart from 0 like en.adsr
+            0.0 => filterEnv.value;
+            ampEnv.set(a::second, d::second, s, r::second);
+            filterEnv.set(a::second, d::second, 0.0, r::second);
+            ampEnv.keyOn();
+            filterEnv.keyOn();
+        }
+        else
+        {
+            ampEnv.keyOff();
+            filterEnv.keyOff();
+        }
+        gate => lastGate;
+    }
+}
+
 // ===================== STK HELPER =====================
 // sets pitch only when the note changes, gates only on change
 fun void stkVoice(StkInstrument inst, Gain amp, float lastNote[], float lastGate[],
@@ -1528,6 +1717,9 @@ Hoover hoover => master;
 Acid   acid   => master;
 Reese  reese  => master;
 Kick99 kick99 => master;
+PsgPlus psgPlus => master;
+Fm2Op  fm2Op  => master;
+Chordy chordy => master;
 
 // ===================== RUN (single shred, 1 ms control rate) =====================
 while (1::ms => now)
@@ -1563,6 +1755,12 @@ while (1::ms => now)
                reeseAttack, reeseDecay, reeseSustain, reeseRelease);
     kick99.tick(kick99Note, kick99Gate, kick99Gain, kick99Decay,
                 kick99PitchAmt, kick99PitchDecay, kick99Click);
+    psgPlus.tick(psgPlusNote, psgPlusGate, psgPlusGain, psgPlusIndex, psgPlusLfoAmount,
+                 psgPlusDSFreq, psgPlusQ, psgPlusAttack, psgPlusDecay, psgPlusSustain, psgPlusRelease);
+    fm2Op.tick(fm2OpNote, fm2OpGate, fm2OpGain, fm2OpModIndex, fm2OpModRatio,
+               fm2OpAttack, fm2OpRelease);
+    chordy.tick(chordyNote, chordyGate, chordyGain, chordyMode, chordyCutoff,
+                chordyAttack, chordyDecay, chordySustain, chordyRelease);
 
     // OSC events: one message per gate change
     trigEvent("bell",       bellGate,       bellNote);
@@ -1584,6 +1782,9 @@ while (1::ms => now)
     trigEvent("acid",       acidGate,       acidNote);
     trigEvent("reese",      reeseGate,      reeseNote);
     trigEvent("kick99",     kick99Gate,     kick99Note);
+    trigEvent("psgPlus",    psgPlusGate,    psgPlusNote);
+    trigEvent("fm2Op",      fm2OpGate,      fm2OpNote);
+    trigEvent("chordy",     chordyGate,     chordyNote);
 }') copyReplaceAll: 'TURBO_ROOT' with: root asChuckPath
 ]
 
