@@ -928,6 +928,59 @@ TurboPhuck class >> codeWithOSCSender [
 0.18 => global float chordyRelease;
 
 // ===================== CLASSES =====================
+
+
+// ===================== HIGH PASS =====================
+// same response as HPF, but on BiQuad: at low cutoffs HPF keeps a state thousands of
+// times louder than the signal, so any cutoff change there comes out as a click.
+// the cutoff also glides, because the knob moves it in big steps
+class ZdHighPass extends Chugraph
+{
+    inlet => BiQuad filter => outlet;
+    second / samp => float sr;
+    0.0 => float current;
+    1.0 => float res;
+
+    fun float Q(float q)
+    {
+        Math.max(1.0, q) => res;
+        if (current > 0.0) setCoefficients();
+        return res;
+    }
+
+    fun float freq(float f)
+    {
+        Math.max(20.0, Math.min(20000.0, f)) => float target;
+        if (target == current) return current;
+
+        // the first call jumps, then about 80 ms from 20 Hz to 20 kHz
+        if (current == 0.0) target => current;
+        else current * Math.pow(target / current, 0.05) => current;
+        if (Math.fabs(target / current - 1.0) < 0.001) target => current;
+
+        setCoefficients();
+        return current;
+    }
+
+    // the same coefficients as HPF
+    fun void setCoefficients()
+    {
+        2.0 * pi * current / sr => float w;
+        Math.tan(w / res * 0.5) => float d;
+        (1.0 - d) / (1.0 + d) => float c;
+        (1.0 + c) * Math.cos(w) => float b;
+        (1.0 + c + b) * 0.25 => float g;
+        g => filter.b0;
+        -2.0 * g => filter.b1;
+        g => filter.b2;
+        -b => filter.a1;
+        c => filter.a2;
+    }
+}
+
+
+
+
 class AcidCubic extends Chugen
 {
     fun float tick(float in)
@@ -1682,9 +1735,10 @@ fun void trigEvent(string name, float gate, float note)
 }
 
 // ===================== GRAPH =====================
-Gain master => Dyno lim => PitShift shifter => HPF highPass =>  dac;
+Gain master => PitShift shifter => ZdHighPass highPass =>  Dyno lim => dac;
 
 1 => shifter.mix;
+2.6 => highPass.Q;
 highpassFreq => highPass.freq;
 pitchShift => shifter.shift;
 masterGain => master.gain;
