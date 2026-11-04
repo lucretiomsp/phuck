@@ -352,6 +352,11 @@ PhuckVM >> traceAllParams [
 			self globals keys sorted do: [ :k| k traceCr ].  
 ]
 
+{ #category : 'trait - trigger' }
+PhuckVM >> trig: aString [ 
+	self shouldBeImplemented.
+]
+
 { #category : 'API - changes' }
 PhuckVM >> trig: aString for: aDurationInSeconds [
 	[ self setValue: 1 parameter: aString.

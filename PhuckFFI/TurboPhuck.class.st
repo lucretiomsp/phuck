@@ -832,7 +832,9 @@ TurboPhuck class >> codeWithOSCSender [
 
 	| root |
 	root := (FileLocator imageDirectory / 'TurboSamples') asFileReference.
-	^ (TurboSampleCodegen new root: root; expand: '// ===================== GLOBALS =====================
+	^ (TurboSampleCodegen new
+		   root: root;
+		   expand: '// ===================== GLOBALS =====================
 // Master
 0.8 => global float masterGain;
 
@@ -1491,7 +1493,8 @@ fun void trigEvent(string name, float gate, float note)
 }
 
 // ===================== GRAPH =====================
-Gain master => Dyno lim => PitShift shifter => HPF highPass => dac;
+Gain master => Dyno lim => PitShift shifter => HPF highPass =>  dac;
+
 1 => shifter.mix;
 highpassFreq => highPass.freq;
 pitchShift => shifter.shift;
@@ -1581,8 +1584,7 @@ while (1::ms => now)
     trigEvent("acid",       acidGate,       acidNote);
     trigEvent("reese",      reeseGate,      reeseNote);
     trigEvent("kick99",     kick99Gate,     kick99Note);
-}')
-		copyReplaceAll: 'TURBO_ROOT' with: root asChuckPath
+}') copyReplaceAll: 'TURBO_ROOT' with: root asChuckPath
 ]
 
 { #category : 'listing' }
@@ -1842,13 +1844,6 @@ TurboPhuck >> stop [
 TurboPhuck >> traceAllParams [
 
 	self class tpVm traceAllParams
-]
-
-{ #category : 'playing' }
-TurboPhuck >> trig: aString [
-	"send a 10 ms trigger to a Faust parameter, designed to trig envelopes and percussions-like sounds"
-
-	self class tpDsp trig: aString
 ]
 
 { #category : 'playing' }
