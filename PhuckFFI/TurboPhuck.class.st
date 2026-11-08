@@ -847,7 +847,8 @@ TurboPhuck class >> codeWithOSCSender [
 0 => global float brassGate;     60 => global float brassNote;     0.5 => global float brassGain;
 0 => global float blowGate;      60 => global float blowNote;      0.5 => global float blowGain;
 0 => global float clarinetGate;  60 => global float clarinetNote;  0.5 => global float clarinetGain;
-0 => global float moogGate;      60 => global float moogNote;      0.5 => global float moogGain;
+
+0 => global float moogGate;      60 => global float moogNote;      0.7 => global float moogGain;
 0 => global float stkShakerGate; 60 => global float stkShakerNote; 0.5 => global float stkShakerGain;
 0 => global float barGate;       60 => global float barNote;       0.5 => global float barGain;
 0 => global float flutGate;      60 => global float flutNote;      0.5 => global float flutGain;
@@ -1762,6 +1763,11 @@ Sitar sitar        => Gain sitarAmp     => stkMaster;
 float stkLastNote[12];
 float stkLastGate[12];
 for (0 => int i; i < 12; i++) -1.0 => stkLastNote[i];
+
+// moog parameters
+0 => moog.filterQ;
+1 => moog.filterSweepRate;
+1 => moog.lfoSpeed;
 
 "TURBO_ROOT" => string turbo;
 //@GRAPH
