@@ -1848,13 +1848,34 @@ while (1::ms => now)
 }') copyReplaceAll: 'TURBO_ROOT' with: root asChuckPath
 ]
 
-{ #category : 'listing' }
-TurboPhuck class >> listOfInstruments [
+{ #category : 'inspecting' }
+TurboPhuck class >> inspectionInstruments: aBuilder [
+	<inspectorPresentationOrder: 0 title: 'Instruments'>
 
-	| instruments |
-	instruments := (TurboPhuck tpVm globals keys select: [ :k | k includesSubstring: 'Gate' ])
-	collect: [ :k | k copyReplaceAll: 'Gate' with: '' ].
-	^ instruments
+	^ aBuilder newTable
+		  addColumn: (SpStringTableColumn title: 'Instrument' evaluated: [ :each | each key ]);
+		  addColumn: (SpStringTableColumn title: 'Files' evaluated: [ :each | each value ]);
+		  items: (self instrumentNames collect: [ :each |
+				   each -> ((self sampleCountFor: each)
+					    ifNil: [ '' ]
+					    ifNotNil: [ :count | count printString ]) ]);
+		  yourself
+]
+
+{ #category : 'inspecting' }
+TurboPhuck class >> instrumentNames [
+	"Every instrument of the running code (each one has a <name>Gate global), alphabetical"
+
+	^ ((tpVm globals keys select: [ :each | each endsWith: 'Gate' ])
+		   collect: [ :each | each allButLast: 4 ])
+		  sorted: [ :a :b | a asLowercase < b asLowercase ]
+]
+
+{ #category : 'inspecting' }
+TurboPhuck class >> listOfInstruments [
+	"Inspector on TurboPhuck: the Instruments tab lists every instrument, with its file count when TurboSamples has a folder for it"
+
+	self inspect
 ]
 
 { #category : 'examples' }
@@ -1975,6 +1996,18 @@ tp stop.
 
 
 StPlayground new contents: code ; open
+]
+
+{ #category : 'inspecting' }
+TurboPhuck class >> sampleCountFor: anInstrument [
+	"wav and aiff files in TurboSamples/anInstrument; nil if there is no such folder"
+
+	| folder |
+	folder := FileLocator imageDirectory asFileReference / 'TurboSamples' / anInstrument.
+	folder isDirectory ifFalse: [ ^ nil ].
+	^ folder files count: [ :each |
+		  (each basename beginsWith: '.') not and: [
+			  #( 'wav' 'aif' 'aiff' ) includes: each extension asLowercase ] ]
 ]
 
 { #category : 'running' }
