@@ -1,3 +1,10 @@
+"
+I am a ChucK expression built with Pharo arithmetic (Interpreter pattern: CkBinOp nodes over CkGetter, CkArg and numbers).
+
+	440 + (lfo last * 200)
+
+Because an expression can change, a param set to me is re-evaluated on every main-loop iteration instead of once. adaptToNumber:andSend: lets a number on the left (440 + ...) build me too.
+"
 Class {
 	#name : 'CkExpr',
 	#superclass : 'Object',
@@ -8,23 +15,29 @@ Class {
 
 { #category : 'arithmetic' }
 CkExpr >> * anObject [
+	"Build the expression instead of computing it: it is evaluated in ChucK"
+
 	^ CkBinOp left: self operator: #* right: anObject
 ]
 
 { #category : 'arithmetic' }
 CkExpr >> + anObject [
-	^ CkBinOp left: self operator: #+ right: anObject
+	"Build the expression instead of computing it: it is evaluated in ChucK"
 
+	^ CkBinOp left: self operator: #+ right: anObject
 ]
 
 { #category : 'arithmetic' }
 CkExpr >> - anObject [
-	^ CkBinOp left: self operator: #- right: anObject
+	"Build the expression instead of computing it: it is evaluated in ChucK"
 
+	^ CkBinOp left: self operator: #- right: anObject
 ]
 
 { #category : 'arithmetic' }
 CkExpr >> / anObject [
+	"Build the expression instead of computing it: it is evaluated in ChucK"
+
 	^ CkBinOp left: self operator: #/ right: anObject
 ]
 
@@ -34,8 +47,9 @@ CkExpr >> adaptToNumber: aNumber andSend: aSymbol [
 	^ CkBinOp left: aNumber operator: aSymbol right: self
 ]
 
-{ #category : 'as yet unclassified' }
+{ #category : 'printing' }
 CkExpr >> ckWriteParam: aSymbol of: aName on: aWriter [
 	"Expressions are evaluated again on every loop iteration"
-	aWriter addToLoop: (self ckCodeIn: aWriter) , ' => ' , aName , '.' , aSymbol , ';'
+
+	aWriter addToLoop: (self ckAssign: aSymbol to: aName in: aWriter)
 ]
