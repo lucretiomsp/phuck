@@ -93,6 +93,17 @@ ZdPlayer class >> folder: aPath name: aString [
 	^ (self folder: aPath) name: aString
 ]
 
+{ #category : 'accessing' }
+ZdPlayer >> audioFiles [
+	"the files the ChucK ZdFiles sees, in its order: audio extensions, no hidden file, alphabetical ignoring case"
+
+	folder isDirectory ifFalse: [ ^ #(  ) ].
+	^ ((folder files select: [ :each |
+		    (each basename beginsWith: '.') not and: [
+			    #( 'wav' 'aif' 'aiff' 'flac' 'ogg' 'raw' 'snd' ) includes: each extension asLowercase ] ]) collect: [ :each |
+		   each basename ]) sorted: [ :a :b | a asLowercase <= b asLowercase ]
+]
+
 { #category : 'chuck code' }
 ZdPlayer >> chuckType [
 	"ZdSampler or ZdLoopPlayer: the ChucK class has my class name"
