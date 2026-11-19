@@ -49,6 +49,17 @@ CkChainRunTest >> testEveryAndProgramCompile [
 		assertCompiles: (CkSinOsc new => CkDac new every: 10 milliSeconds) , (CkSqrOsc new => CkDac new)
 ]
 
+{ #category : 'tests' }
+CkChainRunTest >> testFilterQCompiles [
+	"ChucK spells the resonance Q, not q"
+
+	self
+		assertCompiles: CkSawOsc new => (CkLPF new
+					 freq: 800;
+					 q: 3) => CkDac new;
+		assertCompiles: CkSawOsc new => (CkBPF new q: (#( 1 4 8 ) ckEvery: 100 milliSeconds)) => CkDac new
+]
+
 { #category : 'running' }
 CkChainRunTest >> testGeneratedCodeCompiles [
 	| delay |
@@ -75,6 +86,23 @@ CkChainRunTest >> testReadUGenCompiles [
 	| lfo |
 	lfo := CkSinOsc new freq: 0.5.
 	self assertCompiles: (CkSinOsc new freq: 440 + (lfo last * 200)) => CkDac new
+]
+
+{ #category : 'tests' }
+CkChainRunTest >> testSequencesCompile [
+
+	| m |
+	m := (CkSinOsc new label: 'm')
+		     freq: (#( 10 5 20 2.5 ) ckEvery: 1 second);
+		     gain: 200;
+		     yourself.
+	self
+		assertCompiles: m => ((CkSinOsc new label: 'c')
+					 freq: 220;
+					 sync: 2;
+					 gain: 0.1;
+					 yourself) => CkDac new;
+		assertCompiles: (CkSqrOsc new sync: (#( 0 1 ) ckEvery: 10 milliSeconds)) => CkDac new
 ]
 
 { #category : 'tests' }

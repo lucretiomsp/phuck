@@ -16,5 +16,7 @@ CkFilterBasic >> freq: aValue [
 
 { #category : 'trait' }
 CkFilterBasic >> q: aValue [
-	self param: #q put: aValue
+	"Filter resonance. ChucK spells this param with a capital: 3 => lpf1.Q;"
+
+	self param: #Q put: aValue
 ]

@@ -279,6 +279,38 @@ CkGraphWriter >> writeParamsOf: aUGen [
 ]
 
 { #category : 'writing shreds' }
+CkGraphWriter >> writeSequence: aSequence param: aSymbol of: aName [
+	"A sporked shred stepping through the values in a ChucK array.
+	Its variables are prefixed with the shred name so they cannot hide a UGen"
+
+	| shredName array step |
+	shredName := self autoNameFor: aSequence.
+	array := shredName , 'Values'.
+	step := shredName , 'Step'.
+	shreds
+		nextPutAll: 'fun void ' , shredName , '() {';
+		lf;
+		nextPutAll: '  ' , aSequence ckArrayCode , ' @=> ' , aSequence ckArrayType , ' ' , array , '[];';
+		lf;
+		nextPutAll: '  0 => int ' , step , ';';
+		lf;
+		nextPutAll: '  while (1) {';
+		lf;
+		nextPutAll: '    ' , array , '[' , step , '] => ' , aName , '.' , aSymbol , ';';
+		lf;
+		nextPutAll: '    (' , step , ' + 1) % ' , array , '.size() => ' , step , ';';
+		lf;
+		nextPutAll: '    ' , aSequence period ckCode , ' => now;';
+		lf;
+		nextPutAll: '  }';
+		lf;
+		nextPutAll: '}';
+		lf;
+		nextPutAll: 'spork ~ ' , shredName , '();';
+		lf
+]
+
+{ #category : 'writing shreds' }
 CkGraphWriter >> writeShred: aShred [
 	"fun void shred1() { ... } spork ~ shred1();
 	The shred decides whether its statements loop"

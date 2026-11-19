@@ -69,6 +69,13 @@ CkClassBodyWriter >> setParent: aWriter [
 ]
 
 { #category : 'writing shreds' }
+CkClassBodyWriter >> writeSequence: aSequence param: aSymbol of: aName [
+	"A sequence is a sporked shred, and a class has no place to spork from"
+
+	self error: 'Sequences cannot be used inside a Chugraph or Chugen class: set the param on the instance instead'
+]
+
+{ #category : 'writing shreds' }
 CkClassBodyWriter >> writeShred: aShred [
 	"A class has no place to spork from"
 

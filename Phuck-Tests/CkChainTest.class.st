@@ -228,6 +228,53 @@ CkChainTest >> testRecorderTouched [
 		assert: recorder statements size equals: 2
 ]
 
+{ #category : 'tests - sequences' }
+CkChainTest >> testSequence [
+
+	self
+		assert: (CkSinOsc new freq: (#( 10 5 20 2.5 ) ckEvery: 1 second)) => CkDac new
+		generates: #( 'SinOsc sin1 => dac;' 'fun void seq1() {' '  [10.0, 5.0, 20.0, 2.5] @=> float seq1Values[];'
+			   '  0 => int seq1Step;' '  while (1) {' '    seq1Values[seq1Step] => sin1.freq;' '    (seq1Step + 1) % seq1Values.size() => seq1Step;'
+			   '    1000::ms => now;' '  }' '}' 'spork ~ seq1();' 'while (1) {' '  1::ms => now;' '}' )
+]
+
+{ #category : 'tests - sequences' }
+CkChainTest >> testSequenceNeedsValuesAndTime [
+
+	self
+		should: [ #(  ) ckEvery: 1 second ] raise: Error;
+		should: [ #( 1 2 ) ckEvery: Duration zero ] raise: Error
+]
+
+{ #category : 'tests - sequences' }
+CkChainTest >> testSequenceOfIntegersIsIntArray [
+	"So int params such as sync can be sequenced"
+
+	self assert: (((CkSinOsc new sync: (#( 0 2 ) ckEvery: 100 milliSeconds)) => CkDac new) asPhuck includesSubstring:
+			 '[0, 2] @=> int seq1Values[];')
+]
+
+{ #category : 'tests - sequences' }
+CkChainTest >> testSequenceRefusedInShred [
+
+	| osc |
+	osc := CkSinOsc new.
+	self should: [ (osc => CkDac new , (CkShred once: [ :t | osc freq: (#( 1 2 ) ckEvery: 1 second) ])) asPhuck ] raise: Error
+]
+
+{ #category : 'tests - sequences' }
+CkChainTest >> testSequencesAreNamedApart [
+
+	| code |
+	code := ((CkSinOsc new
+		          freq: (#( 220 330 ) ckEvery: 1 second);
+		          gain: (#( 0.1 0.2 ) ckEvery: 2 seconds)) => CkDac new) asPhuck.
+	self
+		assert: (code includesSubstring: 'seq1Values[seq1Step] => sin1.freq;');
+		assert: (code includesSubstring: 'seq2Values[seq2Step] => sin1.gain;');
+		assert: (code includesSubstring: 'spork ~ seq2();')
+]
+
 { #category : 'tests - sliders' }
 CkChainTest >> testSharedSliderDeclaredOnce [
 

@@ -2044,6 +2044,11 @@ PhuckVM uniqueInstance setValue: aNumber parameter: 'performanceBPM'.
 
 ]
 
+{ #category : 'api' }
+TurboPhuck >> display [
+	Performance uniqueInstance display
+]
+
 { #category : 'API - changes' }
 TurboPhuck >> highpassFreq:  aFloat [
 PhuckVM uniqueInstance setValue: aFloat parameter: 'highPassFreq'.	
