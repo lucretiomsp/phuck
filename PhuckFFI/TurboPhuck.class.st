@@ -1000,371 +1000,219 @@ class Kick99Clip extends Chugen
     }
 }
 
-class ZdSampler extends Chugraph
+// ===================== SAMPLE FOLDERS =====================
+// the audio files of a folder, hidden files skipped, sorted ignoring case
+class ZdFiles
 {
-    SndBuf buf => ADSR env => Gain out => outlet;
-    60 => int rootNote;
-    1  => int retrigOnNote;
-    string dirPath;
-    string files[0];
-    0  => int curIndex;
-    60 => int curNote;
-    0  => int curGate;
-    env.set(1::ms, 380::ms, 1.0, 120::ms);
-    0.4 => buf.gain;
-    1.0 => buf.rate;
-    buf.samples() => buf.pos;
-
-    fun ZdSampler() { }
-    fun ZdSampler(string folder) { load(folder); }
-
-    fun int load(string folder)
+    fun static string slash(string folder)
     {
-        folder => dirPath;
-        if (dirPath.length() > 0 && dirPath.charAt(dirPath.length() - 1) != 47)
-            "/" +=> dirPath;
+        if (folder.length() > 0 && folder.charAt(folder.length() - 1) != 47) return folder + "/";
+        return folder;
+    }
+
+    fun static string[] audio(string folder)
+    {
+        string keep[0];
         FileIO dir;
         if (!dir.open(folder, FileIO.READ) || !dir.isDir())
         {
-            cherr <= "[ZdSampler] cannot open folder: " <= folder <= IO.nl();
-            string none[0] @=> files;
-            return 0;
+            cherr <= "[ZdFiles] cannot open folder: " <= folder <= IO.nl();
+            return keep;
         }
-        sortAlpha(filterAudio(dir.dirList())) @=> files;
+        dir.dirList() @=> string names[];
         dir.close();
-        if (files.size() == 0)
-        {
-            cherr <= "[ZdSampler] no audio files in: " <= folder <= IO.nl();
-            return 0;
-        }
-        loadIndex(0);
-        return files.size();
-    }
-
-    fun void gate(int g)
-    {
-        (g != 0) => int on;
-        if (on == curGate) return;
-        on => curGate;
-        if (on) trigger();
-        else    env.keyOff();
-    }
-
-    fun void note(int n)
-    {
-        if (n == curNote) return;
-        n => curNote;
-        updateRate();
-        if (curGate && retrigOnNote) trigger();
-    }
-
-    fun void index(int i)
-    {
-        if (files.size() == 0) return;
-        wrap(i) => int w;
-        if (w == curIndex) return;
-        loadIndex(w);
-    }
-
-    fun void update(int n, int g, int i, float l)
-    {
-        setGain(l);
-        index(i);
-        note(n);
-        gate(g);
-    }
-
-    fun void setADSR(dur a, dur d, float s, dur r) { env.set(a, d, s, r); }
-    fun void setRootNote(int n)       { n => rootNote; updateRate(); }
-    fun void setRetrigOnNote(int on)  { on => retrigOnNote; }
-    fun void setGain(float g)         { g => buf.gain; }
-    fun int    numSamples()  { return files.size(); }
-    fun string sampleName()  { return files.size() ? files[curIndex] : ""; }
-
-    fun void list()
-    {
-        chout <= "[ZdSampler] " <= dirPath <= " (" <= files.size()
-              <= " samples)" <= IO.nl();
-        for (0 => int i; i < files.size(); i++)
-            chout <= (i == curIndex ? " > " : "   ") <= i <= ": " <= files[i] <= IO.nl();
-    }
-
-    fun void trigger()
-    {
-        if (files.size() == 0) return;
-        updateRate();
-        0 => buf.pos;
-        env.keyOn();
-    }
-
-    fun void updateRate()
-    {
-        Math.pow(2.0, (curNote - rootNote) / 12.0) => buf.rate;
-    }
-
-    fun int wrap(int i)
-    {
-        return ((i % files.size()) + files.size()) % files.size();
-    }
-
-    fun void loadIndex(int i)
-    {
-        i => curIndex;
-        dirPath + files[curIndex] => buf.read;
-        if (curGate) 0 => buf.pos;
-        else buf.samples() => buf.pos;
-    }
-
-    fun static string[] filterAudio(string names[])
-    {
         ["wav", "aif", "aiff", "flac", "ogg", "raw", "snd"] @=> string exts[];
-        string keep[0];
         for (0 => int i; i < names.size(); i++)
         {
             names[i] => string name;
-            if (name.length() == 0 || name.charAt(0) == 46) continue;
             name.rfind(".") => int dot;
-            if (dot < 0) continue;
+            if (name.length() == 0 || name.charAt(0) == 46 || dot < 0) continue;
             name.substring(dot + 1).lower() => string ext;
             for (0 => int j; j < exts.size(); j++)
-            {
                 if (ext == exts[j]) { keep << name; break; }
-            }
         }
+        // insertion sort
+        for (1 => int i; i < keep.size(); i++)
+        {
+            keep[i] => string item;
+            i - 1 => int j;
+            while (j >= 0 && keep[j].lower() > item.lower())
+            {
+                keep[j] => keep[j + 1];
+                j--;
+            }
+            item => keep[j + 1];
+        }
+        if (keep.size() == 0) cherr <= "[ZdFiles] no audio files in: " <= folder <= IO.nl();
         return keep;
     }
 
-    fun static string[] sortAlpha(string input[])
+    fun static int wrap(float index, int size)
     {
-        string output[input.size()];
-        for (0 => int i; i < input.size(); i++)
-        {
-            input[i] => string item;
-            i - 1 => int j;
-            while (j >= 0 && output[j].lower() > item.lower())
-            {
-                output[j] => output[j + 1];
-                j--;
-            }
-            item => output[j + 1];
-        }
-        return output;
+        index $ int => int i;
+        return ((i % size) + size) % size;
     }
 }
 
+// ===================== SAMPLER =====================
+// one folder of one-shots: index picks the file, note 60 plays it at its own pitch,
+// a new note while the gate is on triggers again
+class ZdSampler extends Chugraph
+{
+    SndBuf buf => ADSR env => Gain out => outlet;
+    env.set(1::ms, 380::ms, 1.0, 120::ms);
+    0.4 => buf.gain;
+
+    string dir;
+    string files[0];
+    -1 => int lastIndex;
+    -1.0 => float lastNote;
+    0 => int lastGate;
+
+    fun ZdSampler(string folder)
+    {
+        ZdFiles.slash(folder) => dir;
+        ZdFiles.audio(folder) @=> files;
+    }
+
+    fun void tick(float note, float gate, float gain, float index)
+    {
+        gain => buf.gain;
+        if (files.size() == 0) return;
+
+        ZdFiles.wrap(index, files.size()) => int i;
+        if (i != lastIndex)
+        {
+            dir + files[i] => buf.read;
+            i => lastIndex;
+            (lastGate ? 0 : buf.samples()) => buf.pos;   // silent until the next gate
+        }
+        Math.pow(2.0, (note - 60) / 12.0) => buf.rate;
+
+        (gate > 0) => int on;
+        if (note != lastNote)
+        {
+            note => lastNote;
+            if (on && lastGate) { 0 => buf.pos; env.keyOn(); }
+        }
+        if (on == lastGate) return;
+        if (on) { 0 => buf.pos; env.keyOn(); }
+        else    env.keyOff();
+        on => lastGate;
+    }
+}
+
+// ===================== LOOP PLAYER =====================
+// one folder of loops played in sync with bpm, each file at the bpm of its name
+// (amen|170.wav, else the first number in 60..250). Note 60 = in sync.
+// reverse: plays backwards, turning around at the playhead
+// position: offset from the start point along the playback direction, 0..1 of the file
+// slice: start step in 16ths of the loop, fractions allowed, wraps; negative = whole loop
+// length: loop length in bars for the 16th grid, 0 = from the file bpm
 class ZdLoopPlayer extends Chugraph
 {
     SndBuf buf => ADSR env => Gain out => outlet;
-    string dirPath;
-    string files[0];
-    float origBpms[0];
-    0   => int curIndex;
-    60  => int curNote;
-    0   => int curGate;
-    0   => int curReverse;
-    0.0 => float curPosition;
-    -1.0 => float curSlice;
-    0.0 => float curLength;
-    174 => float curBpm;
     env.set(1::ms, 380::ms, 1.0, 120::ms);
     0.4 => buf.gain;
-    1.0 => buf.rate;
-    buf.samples() => buf.pos;
 
-    fun ZdLoopPlayer() { }
-    fun ZdLoopPlayer(string folder) { load(folder); }
+    string dir;
+    string files[0];
+    float bpms[0];
+    -1 => int lastIndex;
+    0 => int lastGate;
+    0 => int lastReverse;
+    0.0 => float lastPosition;
+    -1.0 => float lastSlice;
+    0.0 => float lastLength;
+    174.0 => float tempo;
 
-    fun int load(string folder)
+    fun ZdLoopPlayer(string folder)
     {
-        folder => dirPath;
-        if (dirPath.length() > 0 && dirPath.charAt(dirPath.length() - 1) != 47)
-            "/" +=> dirPath;
-        FileIO dir;
-        if (!dir.open(folder, FileIO.READ) || !dir.isDir())
-        {
-            cherr <= "[ZdLoopPlayer] cannot open folder: " <= folder <= IO.nl();
-            string none[0] @=> files;
-            return 0;
-        }
-        ZdSampler.sortAlpha(ZdSampler.filterAudio(dir.dirList())) @=> files;
-        dir.close();
-        if (files.size() == 0)
-        {
-            cherr <= "[ZdLoopPlayer] no audio files in: " <= folder <= IO.nl();
-            return 0;
-        }
-        origBpms.size(files.size());
+        ZdFiles.slash(folder) => dir;
+        ZdFiles.audio(folder) @=> files;
+        bpms.size(files.size());
         for (0 => int i; i < files.size(); i++)
         {
-            getBpmFromFileName(files[i]) => origBpms[i];
-            if (origBpms[i] <= 0)
+            bpmOf(files[i]) => bpms[i];
+            if (bpms[i] <= 0)
                 cherr <= "[ZdLoopPlayer] no bpm in " <= files[i] <= ", plays at native speed" <= IO.nl();
         }
-        loadIndex(0);
-        return files.size();
     }
 
-    fun void update(int n, int g, int i, float b, float l, int r, float p, float sl, float len)
+    fun void tick(float note, float gate, float gain, float index, float bpm,
+                  float reverse, float position, float slice, float length)
     {
-        setGain(l);
-        bpm(b);
-        reverse(r);
-        bars(len);
-        slice(sl);
-        position(p);
-        index(i);
-        note(n);
-        gate(g);
-    }
-
-    fun void setGain(float g) { g => buf.gain; }
-
-    fun void gate(int g)
-    {
-        (g != 0) => int on;
-        if (on == curGate) return;
-        on => curGate;
-        if (on) trigger();
-        else    env.keyOff();
-    }
-
-    fun void note(int n)
-    {
-        if (n == curNote) return;
-        n => curNote;
-        updateRate();
-    }
-
-    fun void index(int i)
-    {
+        gain => buf.gain;
         if (files.size() == 0) return;
-        wrap(i) => int w;
-        if (w == curIndex) return;
-        loadIndex(w);
-    }
 
-    // ignores bogus values (e.g. an int read as float gives 0)
-    fun void bpm(float b)
-    {
-        if (b <= 0 || b == curBpm) return;
-        b => curBpm;
-        updateRate();
-    }
+        // a bogus bpm (an int read as float gives 0) keeps the last one
+        if (bpm > 0) bpm => tempo;
+        (reverse != 0) => int back;
+        Math.max(0.0, length) => length;
+        ZdFiles.wrap(index, files.size()) => int i;
 
-    // 1 plays backwards; while playing, turns around at the current playhead
-    fun void reverse(int r)
-    {
-        (r != 0) => int on;
-        if (on == curReverse) return;
-        on => curReverse;
-        updateRate();
-        if (!curGate) park();
-    }
+        (i != lastIndex) => int newFile;
+        (back != lastReverse) => int turned;
+        (position != lastPosition || slice != lastSlice || length != lastLength) => int moved;
+        i => lastIndex;  back => lastReverse;
+        position => lastPosition;  slice => lastSlice;  length => lastLength;
 
-    // offset from the start point along the playback direction, 0..1 of the file
-    fun void position(float p)
-    {
-        if (p == curPosition) return;
-        p => curPosition;
-        jump();
-    }
+        if (newFile) dir + files[i] => buf.read;
 
-    // start step in 16ths of the loop, fractions allowed, wraps; negative = whole loop;
-    // reversed, the same 16th plays backwards
-    fun void slice(float s)
-    {
-        if (s == curSlice) return;
-        s => curSlice;
-        jump();
-    }
-
-    // loop length in bars for the 16th grid, 0 = worked out from the file bpm
-    fun void bars(float b)
-    {
-        if (b < 0) 0.0 => b;
-        if (b == curLength) return;
-        b => curLength;
-        jump();
-    }
-
-    // while playing, move the playhead to the new start point
-    fun void jump()
-    {
-        if (curGate && files.size() > 0) startFrame() => buf.pos;
-    }
-
-    fun void trigger()
-    {
-        if (files.size() == 0) return;
-        updateRate();
-        startFrame() => buf.pos;
-        env.keyOn();
-    }
-
-    // bpm sync times transposition (note 60 = in sync), negative when reversed
-    fun void updateRate()
-    {
-        if (files.size() == 0) return;
+        // bpm sync times transposition, negative when reversed
         1.0 => float ratio;
-        if (origBpms[curIndex] > 0) curBpm / origBpms[curIndex] => ratio;
-        ratio * Math.pow(2.0, (curNote - 60) / 12.0) => ratio;
-        if (curReverse) -ratio => ratio;
-        ratio => buf.rate;
+        if (bpms[i] > 0) tempo / bpms[i] => ratio;
+        ratio * Math.pow(2.0, (note - 60) / 12.0) => ratio;
+        (back ? -ratio : ratio) => buf.rate;
+
+        // while playing, a new file or start point moves the playhead; stopped, it parks
+        if (lastGate && (newFile || moved)) startFrame() => buf.pos;
+        if (!lastGate && (newFile || turned)) park();
+
+        (gate > 0) => int on;
+        if (on == lastGate) return;
+        if (on) { startFrame() => buf.pos; env.keyOn(); }
+        else    env.keyOff();
+        on => lastGate;
     }
 
-    // file frames in one 16th: from loopLength if set, else from the file bpm, else 1 bar
+    // file frames in one 16th: from the length if set, else from the file bpm, else 1 bar
     fun float stepFrames()
     {
         buf.samples() => int n;
-        if (curLength > 0) return n / (16.0 * curLength);
-        if (origBpms[curIndex] > 0)
-            return (15.0 / origBpms[curIndex]) * (n / (buf.length() / second));
+        if (lastLength > 0) return n / (16.0 * lastLength);
+        if (bpms[lastIndex] > 0)
+            return (15.0 / bpms[lastIndex]) * (n / (buf.length() / second));
         return n / 16.0;
     }
 
     // start of the 16th (its end when reversed, whole file when slicing is off),
-    // moved by curPosition along the playback direction
+    // moved by the position along the playback direction
     fun int startFrame()
     {
         buf.samples() => int n;
         0.0 => float from;
         n $ float => float to;
-        if (curSlice >= 0)
+        if (lastSlice >= 0)
         {
             stepFrames() => float step;
             Math.max(1.0, Math.round(n / step)) => float steps;
-            curSlice - steps * Math.floor(curSlice / steps) => float k;
+            lastSlice - steps * Math.floor(lastSlice / steps) => float k;
             k * step => from;
             (k + 1) * step => to;
         }
-        from + curPosition * n => float p;
-        if (curReverse) to - curPosition * n => p;
+        (lastReverse ? to - lastPosition * n : from + lastPosition * n) => float p;
         return Math.max(0.0, Math.min(n - 1.0, p)) $ int;
     }
 
     // playhead where nothing plays in the current direction
     fun void park()
     {
-        if (curReverse) 0 => buf.pos;
-        else buf.samples() => buf.pos;
-    }
-
-    fun int wrap(int i)
-    {
-        return ((i % files.size()) + files.size()) % files.size();
-    }
-
-    fun void loadIndex(int i)
-    {
-        i => curIndex;
-        dirPath + files[curIndex] => buf.read;
-        updateRate();
-        if (curGate) startFrame() => buf.pos;
-        else park();
+        (lastReverse ? 0 : buf.samples()) => buf.pos;
     }
 
     // pipe tag first (myBassLoop|128.wav), else first number in 60..250, else 0
-    fun float getBpmFromFileName(string fileName)
+    fun static float bpmOf(string fileName)
     {
         fileName => string base;
         fileName.rfind(".") => int dot;
@@ -1375,22 +1223,13 @@ class ZdLoopPlayer extends Chugraph
             base.substring(pipe + 1).toFloat() => float b;
             if (b > 0) return b;
         }
-        return guessBpm(base);
-    }
-
-    fun float guessBpm(string base)
-    {
         0 => int num;
         0 => int inRun;
         for (0 => int i; i <= base.length(); i++)
         {
             -1 => int c;
             if (i < base.length()) base.charAt(i) => c;
-            if (c >= 48 && c <= 57)
-            {
-                num * 10 + (c - 48) => num;
-                1 => inRun;
-            }
+            if (c >= 48 && c <= 57) { num * 10 + (c - 48) => num; 1 => inRun; }
             else
             {
                 if (inRun && num >= 60 && num <= 250) return num $ float;

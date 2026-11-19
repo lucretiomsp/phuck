@@ -73,10 +73,14 @@ TurboSampleCodegen >> folders [
 
 { #category : 'helpers' }
 TurboSampleCodegen >> globalsFor: aFolder [
+	"every value is a float, like the synths: setValue:parameter: sends what the global declares"
+
 	^ ((self isLoop: aFolder)
-		ifTrue: [ '60 => global int <1s>Note; 0 => global int <1s>Gate; 0 => global int <1s>Index; 0.4 => global float <1s>Gain; 0 => global int <1s>Reverse; 0 => global float <1s>Position; -1 => global float <1s>Slice; 0 => global float <1s>Length;' ]
-		ifFalse: [ '60 => global int <1s>Note; global int <1s>Gate; global int <1s>Index; 0.4 => global float <1s>Gain;' ])
-			expandMacrosWith: (self nameFor: aFolder)
+		   ifTrue: [
+			   '60 => global float <1s>Note; 0 => global float <1s>Gate; 0.4 => global float <1s>Gain; 0 => global float <1s>Index; 0 => global float <1s>Reverse; 0 => global float <1s>Position; -1 => global float <1s>Slice; 0 => global float <1s>Length;' ]
+		   ifFalse: [
+		   '60 => global float <1s>Note; 0 => global float <1s>Gate; 0.4 => global float <1s>Gain; 0 => global float <1s>Index;' ])
+		  expandMacrosWith: (self nameFor: aFolder)
 ]
 
 { #category : 'helpers' }
@@ -134,8 +138,9 @@ TurboSampleCodegen >> root: aFileReference [
 
 { #category : 'helpers' }
 TurboSampleCodegen >> updateFor: aFolder [
+
 	^ ((self isLoop: aFolder)
-		ifTrue: [ '    <1s>.update(<1s>Note, <1s>Gate, <1s>Index, performanceBPM, <1s>Gain, <1s>Reverse, <1s>Position, <1s>Slice, <1s>Length);' ]
-		ifFalse: [ '    <1s>.update(<1s>Note, <1s>Gate, <1s>Index, <1s>Gain);' ])
-			expandMacrosWith: (self nameFor: aFolder)
+		   ifTrue: [
+		   '    <1s>.tick(<1s>Note, <1s>Gate, <1s>Gain, <1s>Index, performanceBPM, <1s>Reverse, <1s>Position, <1s>Slice, <1s>Length);' ]
+		   ifFalse: [ '    <1s>.tick(<1s>Note, <1s>Gate, <1s>Gain, <1s>Index);' ]) expandMacrosWith: (self nameFor: aFolder)
 ]
