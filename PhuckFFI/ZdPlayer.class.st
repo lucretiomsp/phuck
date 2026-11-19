@@ -1,5 +1,5 @@
 "
-I am a sample player of one folder, running as my own shred in PhuckVM uniqueInstance, straight into dac. My subclasses say which ChucK class plays: ZdSampler (one-shots) or ZdLoopPlayer (loops in sync with performanceBPM).
+I am a sample player of one folder, a TurboVoice playing into the master bus. My subclasses say which ChucK class plays: ZdSampler (one-shots) or ZdLoopPlayer (loops in sync with performanceBPM).
 
 ```language=Pharo
 	kick := ZdSampler folder: 'TurboSamples/kick'.
@@ -9,35 +9,22 @@ I am a sample player of one folder, running as my own shred in PhuckVM uniqueIns
 	kick stop.
 ```
 
-My ChucK globals are float and start with my name, the folder name by default: kickNote, kickGate, kickGain, kickIndex. So a Coypu sequencer can trigger me like any Phuck instrument, through PhuckVM>>trig:for: on kickGate.
-
-ChucK globals are shared by the whole VM: if TurboPhuck runs too and has a folder of the same name, both play. Give me another name with name: before play.
-
-play while I play swaps my code, and my globals restart at their defaults.
+My ChucK globals are float and start with my name, the folder name by default: kickNote, kickGate, kickGain, kickIndex. ChucK globals are shared by the whole VM: if the old TurboPhuck program runs too, its kick plays along. Give me another name with name: before play.
 "
 Class {
 	#name : 'ZdPlayer',
-	#superclass : 'Object',
+	#superclass : 'TurboVoice',
 	#instVars : [
-		'name',
-		'folder',
-		'shred'
+		'folder'
 	],
 	#category : 'PhuckFFI-TurboPhuck',
 	#package : 'PhuckFFI',
 	#tag : 'TurboPhuck'
 }
 
-{ #category : 'instance creation' }
-ZdPlayer class >> chuckClass [
-	"the ChucK class an instance runs"
-
-	^ self subclassResponsibility
-]
-
 { #category : 'chuck code' }
-ZdPlayer class >> filesCode [
-	"ChucK class ZdFiles: lists, filters and sorts the audio files of a folder"
+ZdPlayer class >> chuckClass [
+	"my ChucK classes, the old ChucK code; TurboLibrary compiles them once as public classes"
 	^ '// ===================== SAMPLE FOLDERS =====================
 // the audio files of a folder, hidden files skipped, sorted ignoring case
 class ZdFiles
@@ -107,42 +94,23 @@ ZdPlayer class >> folder: aPath name: aString [
 ]
 
 { #category : 'chuck code' }
-ZdPlayer >> code [
-	"my whole shred: the ChucK classes, my globals, the player into dac and a 1 ms control loop"
+ZdPlayer >> chuckType [
+	"ZdSampler or ZdLoopPlayer: the ChucK class has my class name"
 
-	^ String streamContents: [ :stream |
-			  stream
-				  << self class filesCode;
-				  cr;
-				  cr;
-				  << self class chuckClass;
-				  cr;
-				  cr.
-			  self globals do: [ :each |
-					  stream
-						  print: each value;
-						  << ' => global float ';
-						  << (self parameter: each key);
-						  << ';';
-						  cr ].
-			  self sharedGlobals do: [ :each |
-					  stream
-						  << 'global float ';
-						  << each;
-						  << ';';
-						  cr ].
-			  stream
-				  cr;
-				  << self class name;
-				  << ' player("';
-				  << folder asChuckPath;
-				  << '") => dac;';
-				  cr.
-			  stream << 'while (1::ms => now) player.tick('.
-			  self tickArguments do: [ :each | stream << each ] separatedBy: [ stream << ', ' ].
-			  stream
-				  << ');';
-				  cr ]
+	^ self class name
+]
+
+{ #category : 'chuck code' }
+ZdPlayer >> declaration [
+
+	^ self chuckType , ' v("' , folder asChuckPath , '")'
+]
+
+{ #category : 'accessing' }
+ZdPlayer >> defaultName [
+	"the folder name as a ChucK identifier: hi-hat gives hihat"
+
+	^ TurboSampleCodegen new nameFor: folder
 ]
 
 { #category : 'accessing' }
@@ -158,19 +126,6 @@ ZdPlayer >> folder: aPath [
 	folder := aPath isString
 		          ifTrue: [ FileLocator imageDirectory asFileReference resolveString: aPath ]
 		          ifFalse: [ aPath asFileReference ]
-]
-
-{ #category : 'parameters' }
-ZdPlayer >> gain: aNumber [
-
-	self set: 'Gain' to: aNumber
-]
-
-{ #category : 'parameters' }
-ZdPlayer >> gate: aNumber [
-	"1 starts the file, 0 releases it"
-
-	self set: 'Gate' to: aNumber
 ]
 
 { #category : 'chuck code' }
@@ -189,104 +144,4 @@ ZdPlayer >> index: anInteger [
 	"which file of the folder, wraps, 0 is the first in alphabetical order"
 
 	self set: 'Index' to: anInteger
-]
-
-{ #category : 'running' }
-ZdPlayer >> isPlaying [
-
-	^ shred isNotNil and: [ shred isRemoved not ]
-]
-
-{ #category : 'accessing' }
-ZdPlayer >> name [
-	"the prefix of my ChucK globals, the folder name by default (hi-hat gives hihat)"
-
-	^ name ifNil: [ TurboSampleCodegen new nameFor: folder ]
-]
-
-{ #category : 'accessing' }
-ZdPlayer >> name: aString [
-
-	name := aString
-]
-
-{ #category : 'parameters' }
-ZdPlayer >> note: aMidiNote [
-	"60 plays the file at its own pitch"
-
-	self set: 'Note' to: aMidiNote
-]
-
-{ #category : 'parameters' }
-ZdPlayer >> parameter: aSuffix [
-	"the ChucK global for aSuffix, kickGate for Gate"
-
-	^ self name , aSuffix
-]
-
-{ #category : 'running' }
-ZdPlayer >> play [
-	"spork my shred, or swap its code when I already play; boots the VM when needed"
-
-	self vm isRunning ifFalse: [ self vm start ].
-	self isPlaying
-		ifTrue: [ shred replace: self code ]
-		ifFalse: [ shred := self vm run: self code ]
-]
-
-{ #category : 'printing' }
-ZdPlayer >> printOn: aStream [
-
-	aStream << self class name << '(' << self name << (self isPlaying
-		 ifTrue: [ ', playing' ]
-		 ifFalse: [ '' ]) << ')'
-]
-
-{ #category : 'parameters' }
-ZdPlayer >> set: aSuffix to: aNumber [
-
-	self vm setValue: aNumber parameter: (self parameter: aSuffix)
-]
-
-{ #category : 'chuck code' }
-ZdPlayer >> sharedGlobals [
-	"globals other shreds own too: declared without a value, so I do not reset them"
-
-	^ #(  )
-]
-
-{ #category : 'accessing' }
-ZdPlayer >> shred [
-
-	^ shred
-]
-
-{ #category : 'running' }
-ZdPlayer >> stop [
-
-	self isPlaying ifTrue: [ shred remove ]
-]
-
-{ #category : 'chuck code' }
-ZdPlayer >> tickArguments [
-
-	^ self globals collect: [ :each | self parameter: each key ]
-]
-
-{ #category : 'parameters' }
-ZdPlayer >> trig [
-
-	self trig: 0.1
-]
-
-{ #category : 'parameters' }
-ZdPlayer >> trig: seconds [
-
-	self vm trig: (self parameter: 'Gate') for: seconds
-]
-
-{ #category : 'accessing' }
-ZdPlayer >> vm [
-
-	^ PhuckVM uniqueInstance
 ]

@@ -1687,6 +1687,16 @@ while (1::ms => now)
 }') copyReplaceAll: 'TURBO_ROOT' with: root asChuckPath
 ]
 
+{ #category : 'running' }
+TurboPhuck class >> connectPerformanceTo: aPhuckVM [
+	"Coypu plays through aPhuckVM: TurboPhuck new, the sequencers, instrumentNames and the IDE use tpPerf and tpVm"
+
+	tpVm := aPhuckVM.
+	tpPerf := Performance uniqueInstance forPhuck: aPhuckVM.
+	tpPerf performanceType: PerfType new.
+	^ tpPerf
+]
+
 { #category : 'inspecting' }
 TurboPhuck class >> inspectionInstruments: aBuilder [
 	<inspectorPresentationOrder: 0 title: 'Instruments'>
@@ -1852,14 +1862,11 @@ TurboPhuck class >> sampleCountFor: anInstrument [
 { #category : 'running' }
 TurboPhuck class >> start [
 
-	| perf |
 	PhuckVM uniqueInstance releaseVM.
 	tpVm := PhuckVM uniqueInstance.
 	tpVm isRunning ifFalse: [ tpVm start ].
-	tpVm run: self codeWithOSCSender .
-	perf := Performance uniqueInstance.
-	tpPerf := perf forPhuck: tpVm.
-	tpPerf performanceType: PerfType new
+	tpVm run: self codeWithOSCSender.
+	self connectPerformanceTo: tpVm
 ]
 
 { #category : 'accessing' }
