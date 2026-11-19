@@ -2,7 +2,7 @@
 I am one STK instrument as a voice, through the ChucK class ZdStk. The twelve of the old TurboPhuck code, by their global prefix:
 
 ```language=Pharo
-	(TurboStk named: 'bell') play; trig.
+	(TurboStk named: 'bell') spork; trig.
 	TurboStk all.
 	TurboStk instruments.
 ```

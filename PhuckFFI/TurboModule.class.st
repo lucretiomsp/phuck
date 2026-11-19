@@ -1,7 +1,7 @@
 "
 I am one small ChucK program of the Turbo rig, run as its own shred in PhuckVM uniqueInstance. My subclasses hold their ChucK code as plain strings, one piece each, so the old single TurboPhuck program can move to PhuckLang one piece at a time.
 
-play sporks my shred, or swaps its code when I already play. stop removes it. prepare runs first: what I need running before me.
+spork sporks my shred, or swaps its code when it is already sporked. unspork removes it. isSporked tells. A voice sporked is silent until its gate opens (trig, gate:). prepare runs first: what I need running before me.
 
 - TurboLibrary: every ChucK class, compiled once as public classes
 - TurboMaster: the master bus, a global Gain every voice plays into
@@ -27,13 +27,13 @@ TurboModule >> code [
 
 { #category : 'running' }
 TurboModule >> forgetShred [
-	"my shred died with its VM (PhuckVM reset, image restart): the next play sporks a new one"
+	"my shred died with its VM (PhuckVM reset, image restart): the next spork makes a new one"
 
 	shred := nil
 ]
 
 { #category : 'running' }
-TurboModule >> isPlaying [
+TurboModule >> isSporked [
 
 	^ shred isNotNil and: [ shred isRemoved not ]
 ]
@@ -42,17 +42,6 @@ TurboModule >> isPlaying [
 TurboModule >> label [
 
 	^ self class name
-]
-
-{ #category : 'running' }
-TurboModule >> play [
-	"spork my shred, or swap its code when I already play; boots the VM when needed"
-
-	self vm isRunning ifFalse: [ self vm start ].
-	self prepare.
-	self isPlaying
-		ifTrue: [ shred replace: self code ]
-		ifFalse: [ shred := self vm run: self code ]
 ]
 
 { #category : 'running' }
@@ -65,8 +54,8 @@ TurboModule >> prepare [
 { #category : 'printing' }
 TurboModule >> printOn: aStream [
 
-	aStream << self label << (self isPlaying
-		 ifTrue: [ ' (playing)' ]
+	aStream << self label << (self isSporked
+		 ifTrue: [ ' (sporked)' ]
 		 ifFalse: [ '' ])
 ]
 
@@ -77,9 +66,22 @@ TurboModule >> shred [
 ]
 
 { #category : 'running' }
-TurboModule >> stop [
+TurboModule >> spork [
+	"spork my shred, or swap its code when it is already sporked; boots the VM when needed.
+	A voice makes no sound yet: its gate does (trig, gate:)"
 
-	self isPlaying ifTrue: [ shred remove ]
+	self vm isRunning ifFalse: [ self vm start ].
+	self prepare.
+	self isSporked
+		ifTrue: [ shred replace: self code ]
+		ifFalse: [ shred := self vm run: self code ]
+]
+
+{ #category : 'running' }
+TurboModule >> unspork [
+	"remove my shred from the VM"
+
+	self isSporked ifTrue: [ shred remove ]
 ]
 
 { #category : 'accessing' }

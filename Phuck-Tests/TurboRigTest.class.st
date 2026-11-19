@@ -55,6 +55,17 @@ TurboRigTest >> tearDown [
 	super tearDown
 ]
 
+{ #category : 'tests - code' }
+TurboRigTest >> testANewVoiceIsNotSporked [
+
+	| hoover |
+	hoover := TurboHoover new.
+	self deny: hoover isSporked.
+	self assert: hoover printString equals: 'TurboHoover(hoover)'.
+	self assert: self rig sporked isEmpty.
+	#( #play #stop #isPlaying ) do: [ :each | self deny: (TurboVoice canUnderstand: each) ]
+]
+
 { #category : 'tests - vm' }
 TurboRigTest >> testAVoiceCanBeCompiledTwice [
 	"play again swaps the code: a voice shred defines no class, only the library is public, so nothing clashes"

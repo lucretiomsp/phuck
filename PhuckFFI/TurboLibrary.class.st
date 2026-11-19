@@ -59,7 +59,7 @@ TurboLibrary >> isLoadedIn: aPhuckVM [
 ]
 
 { #category : 'running' }
-TurboLibrary >> isPlaying [
+TurboLibrary >> isSporked [
 
 	^ self isLoaded
 ]
@@ -72,15 +72,6 @@ TurboLibrary >> owners [
 ]
 
 { #category : 'running' }
-TurboLibrary >> play [
-	"compile the classes once: a public class cannot be defined twice in the same VM.
-	After changing a chuckClass, PhuckVM reset and start again"
-
-	self vm isRunning ifFalse: [ self vm start ].
-	self isLoaded ifFalse: [ self vm compile: self code ]
-]
-
-{ #category : 'running' }
 TurboLibrary >> publicize: aString [
 
 	^ String cr join: (aString lines collect: [ :line |
@@ -90,7 +81,16 @@ TurboLibrary >> publicize: aString [
 ]
 
 { #category : 'running' }
-TurboLibrary >> stop [
+TurboLibrary >> spork [
+	"compile the classes once: a public class cannot be defined twice in the same VM.
+	After changing a chuckClass, PhuckVM reset and spork again"
+
+	self vm isRunning ifFalse: [ self vm start ].
+	self isLoaded ifFalse: [ self vm compile: self code ]
+]
+
+{ #category : 'running' }
+TurboLibrary >> unspork [
 	"public classes cannot be removed from a running VM"
 
 	

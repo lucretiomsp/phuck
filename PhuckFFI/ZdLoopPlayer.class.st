@@ -3,11 +3,11 @@ I play the loops of a folder in sync with performanceBPM. Each file plays at the
 
 ```language=Pharo
 	breaks := ZdLoopPlayer folder: 'TurboSamples/breaks'.
-	breaks play; gate: 1.
+	breaks spork; gate: 1.
 	breaks slice: 4.
 	breaks reverse: true.
 	breaks wholeLoop; reverse: false.
-	breaks gate: 0; stop.
+	breaks gate: 0; unspork.
 ```
 See ZdPlayer.
 "

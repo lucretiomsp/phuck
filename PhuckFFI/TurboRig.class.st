@@ -6,10 +6,10 @@ I am the whole Turbo instrument as small shreds: the twelve STK instruments, the
 	TurboPhuck new.	""Coypu as before""
 	(TurboRig default at: 'kick') trig.
 	(TurboRig default at: 'acid') cutoff: 0.6; trig: 0.3.
-	TurboRig default playing.
+	TurboRig default sporked.
 	TurboRig stop.
 ```
-start connects Coypu through TurboPhuck class>>connectPerformanceTo:, like the old TurboPhuck start. On a fresh VM (PhuckVM reset, old TurboPhuck start, image restart) start forgets the old shreds and plays everything anew. TurboRig reset forgets everything. A new sample folder: TurboRig default root: aFolder, or TurboRig reset.
+start connects Coypu through TurboPhuck class>>connectPerformanceTo:, like the old TurboPhuck start. On a fresh VM (PhuckVM reset, old TurboPhuck start, image restart) start forgets the old shreds and sporks everything anew. TurboRig reset forgets everything. A new sample folder: TurboRig default root: aFolder, or TurboRig reset.
 "
 Class {
 	#name : 'TurboRig',
@@ -92,12 +92,6 @@ TurboRig >> names [
 	^ self voices collect: [ :each | each name ]
 ]
 
-{ #category : 'running' }
-TurboRig >> playing [
-
-	^ self voices select: [ :each | each isPlaying ]
-]
-
 { #category : 'accessing' }
 TurboRig >> root [
 	"the sample folders, one ZdSampler or ZdLoopPlayer each"
@@ -113,6 +107,13 @@ TurboRig >> root: aFileReference [
 ]
 
 { #category : 'running' }
+TurboRig >> sporked [
+	"the voices whose shred runs"
+
+	^ self voices select: [ :each | each isSporked ]
+]
+
+{ #category : 'running' }
 TurboRig >> start [
 	"library, master, then one shred per voice; Coypu then plays through the rig like through the old TurboPhuck.
 	A VM without the library is a fresh one (PhuckVM reset, old TurboPhuck start, image restart): the shreds I knew are gone"
@@ -121,18 +122,18 @@ TurboRig >> start [
 	TurboLibrary default isLoaded ifFalse: [
 			TurboMaster default forgetShred.
 			self voices do: [ :each | each forgetShred ].
-			TurboLibrary default play ].
-	TurboMaster default isPlaying ifFalse: [ TurboMaster default play ].
-	self voices do: [ :each | each isPlaying ifFalse: [ each play ] ].
+			TurboLibrary default spork ].
+	TurboMaster default isSporked ifFalse: [ TurboMaster default spork ].
+	self voices do: [ :each | each isSporked ifFalse: [ each spork ] ].
 	TurboPhuck connectPerformanceTo: self vm
 ]
 
 { #category : 'running' }
 TurboRig >> stop [
-	"every voice shred and the master; the library stays compiled in the VM"
+	"unspork every voice and the master; the library stays compiled in the VM"
 
-	self voices do: [ :each | each stop ].
-	TurboMaster default stop
+	self voices do: [ :each | each unspork ].
+	TurboMaster default unspork
 ]
 
 { #category : 'accessing' }

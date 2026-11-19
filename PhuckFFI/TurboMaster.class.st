@@ -2,7 +2,7 @@
 I am the master bus of the rig: global Gain master => PitShift => ZdHighPass => Dyno => dac, with the globals masterGain, pitchShift, highpassFreq and performanceBPM of the old TurboPhuck code.
 
 ```language=Pharo
-	TurboMaster default play.
+	TurboMaster default spork.
 	TurboMaster default gain: 0.6; highpassFreq: 300; bpm: 140.
 ```
 "
@@ -130,5 +130,5 @@ TurboMaster >> pitchShift: aNumber [
 { #category : 'chuck code' }
 TurboMaster >> prepare [
 
-	TurboLibrary default play
+	TurboLibrary default spork
 ]

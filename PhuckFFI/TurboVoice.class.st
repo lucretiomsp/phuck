@@ -3,12 +3,12 @@ I am one instrument of the rig in its own shred, playing into the master bus. My
 
 ```language=Pharo
 	hoover := TurboHoover new.
-	hoover play.
+	hoover spork.
 	hoover note: 62; trig.
 	hoover code.	""the ChucK program I run""
-	hoover stop.
+	hoover unspork.
 ```
-A subclass gives globals (suffix -> default, in the order the ChucK tick takes them), chuckType and defaultName; setupCode, declaration, tickArguments and eventNote when it needs more. play first makes sure TurboLibrary and TurboMaster run.
+A subclass gives globals (suffix -> default, in the order the ChucK tick takes them), chuckType and defaultName; setupCode, declaration, tickArguments and eventNote when it needs more. spork first makes sure TurboLibrary and TurboMaster run (a fresh VM too).
 "
 Class {
 	#name : 'TurboVoice',
@@ -195,10 +195,14 @@ TurboVoice >> parameter: aSuffix [
 
 { #category : 'running' }
 TurboVoice >> prepare [
-	"the classes and the master bus I play into"
+	"the classes and the master bus I play into. A VM without the library is a fresh one
+	(PhuckVM reset, old TurboPhuck start, image restart): the master and my own shred died with the old one"
 
-	TurboLibrary default play.
-	TurboMaster default isPlaying ifFalse: [ TurboMaster default play ]
+	TurboLibrary default isLoaded ifFalse: [
+			TurboMaster default forgetShred.
+			self forgetShred.
+			TurboLibrary default spork ].
+	TurboMaster default isSporked ifFalse: [ TurboMaster default spork ]
 ]
 
 { #category : 'parameters' }

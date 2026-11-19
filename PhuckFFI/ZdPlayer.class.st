@@ -3,13 +3,13 @@ I am a sample player of one folder, a TurboVoice playing into the master bus. My
 
 ```language=Pharo
 	kick := ZdSampler folder: 'TurboSamples/kick'.
-	kick play.
+	kick spork.
 	kick trig.
 	kick index: 3; note: 67; gain: 0.5; trig.
-	kick stop.
+	kick unspork.
 ```
 
-My ChucK globals are float and start with my name, the folder name by default: kickNote, kickGate, kickGain, kickIndex. ChucK globals are shared by the whole VM: if the old TurboPhuck program runs too, its kick plays along. Give me another name with name: before play.
+My ChucK globals are float and start with my name, the folder name by default: kickNote, kickGate, kickGain, kickIndex. ChucK globals are shared by the whole VM: if the old TurboPhuck program runs too, its kick plays along. Give me another name with name: before spork.
 "
 Class {
 	#name : 'ZdPlayer',
