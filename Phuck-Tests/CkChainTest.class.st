@@ -87,6 +87,48 @@ CkChainTest >> testEvery [
 		generates: #('SinOsc sin1 => dac;' 'while (1) {' '  100::ms => now;' '}')
 ]
 
+{ #category : 'tests - ugens' }
+CkChainTest >> testImpulseAndBiQuadParams [
+	"next fires the impulse; ChucK spells equal-gain zeroes eqzs"
+
+	| imp filter |
+	imp := CkImpulse new label: 'i'.
+	filter := (CkBiQuad new label: 'f')
+		          prad: 0.99;
+		          eqzs: 1;
+		          b0: 1;
+		          norm: 1;
+		          yourself.
+	self
+		assert: (imp next: 1.0) => filter => CkDac new
+		generates:
+			#( 'Impulse i => BiQuad f => dac;' '1.0 => i.next;' '0.99 => f.prad;' '1 => f.eqzs;' '1 => f.b0;' '1 => f.norm;' 'while (1) {'
+			   '  1::ms => now;' '}' )
+]
+
+{ #category : 'tests - ugens' }
+CkChainTest >> testImpulseSweepInAShred [
+	"the ChucK example: a click every 100 ms through a BiQuad whose resonance follows |sin v| * 4000.
+	Pharo computes the values (rounded / 100.0 prints clean decimals), the shred loops over them"
+
+	| imp filter code |
+	imp := CkImpulse new label: 'i'.
+	filter := (CkBiQuad new label: 'f')
+		          prad: 0.99;
+		          eqzs: 1;
+		          yourself.
+	code := (imp => filter => CkDac new , (CkShred loop: [ :t |
+			          (0 to: 2) do: [ :k |
+					          imp next: 1.0.
+					          filter pfreq: ((k / 10) sin abs * 400000) rounded / 100.0.
+					          t wait: 100 milliSeconds ] ])) asPhuck.
+	self assert: (code includesSubstring: '    1.0 => i.next;').
+	self assert: (code includesSubstring: '    0.0 => f.pfreq;').
+	self assert: (code includesSubstring: '    399.33 => f.pfreq;').
+	self assert: (code includesSubstring: '    794.68 => f.pfreq;').
+	self assert: imp params isEmpty
+]
+
 { #category : 'tests - labels' }
 CkChainTest >> testInvalidLabelFails [
 

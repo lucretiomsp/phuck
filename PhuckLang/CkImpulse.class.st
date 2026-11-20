@@ -1,5 +1,9 @@
 "
-The same as the Gain UGen, but the constructor sets the gain in deciBels rather than linear scaling.
+An impulse generator: outputs the value set with next: for one sample, then 0.
+
+```language=Pharo
+	(CkImpulse new next: 1.0) => CkBiQuad new => CkDac new
+```
 "
 Class {
 	#name : 'CkImpulse',
@@ -9,16 +13,17 @@ Class {
 	#tag : 'UGen'
 }
 
-{ #category : 'accessing' }
-CkImpulse >> next [ 
+{ #category : 'API' }
+CkImpulse >> next [
+	"the value of the next sample, as an expression usable in params of other UGens"
 
-" ? Get value of next sample to be generated."
-self shouldBeImplemented 
+	^ CkGetter ugen: self selector: #next
 ]
 
-{ #category : 'accessing' }
-CkImpulse >> next: aFloat [ 
+{ #category : 'API' }
+CkImpulse >> next: aValue [
+	"Set the value of the next sample: 1.0 => i.next fires one click.
+	(Read with last, the value shows one sample later.)"
 
-"Set the value of next sample. (Note: if you are using the UGen.last() method to read the output of the impulse, the value set by Impulse.next() does not appear as the output until after the next sample boundary. In this case, there is a consistent 1::samp offset between setting .next(...) and reading that value using .last().)"
-self shouldBeImplemented 
+	self param: #next put: aValue
 ]

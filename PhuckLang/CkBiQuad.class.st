@@ -31,6 +31,13 @@ CkBiQuad >> a2: aValue [
 ]
 
 { #category : 'API' }
+CkBiQuad >> b0: aValue [
+	"Set filter coefficient."
+
+	self param: #b0 put: aValue
+]
+
+{ #category : 'API' }
 CkBiQuad >> b1: aValue [
 "Set filter coefficient."
 	self param: #b1 put: aValue
@@ -43,9 +50,17 @@ CkBiQuad >> b2: aValue [
 ]
 
 { #category : 'API' }
-CkBiQuad >> eqz: aValue [
-"Enable equal-gain zeroes."
-	self param: #eqz put: aValue
+CkBiQuad >> eqzs: aValue [
+	"Enable equal-gain zeroes (ChucK spells it eqzs)"
+
+	self param: #eqzs put: aValue
+]
+
+{ #category : 'API' }
+CkBiQuad >> norm: aValue [
+	"Normalize the filter gain"
+
+	self param: #norm put: aValue
 ]
 
 { #category : 'API' }

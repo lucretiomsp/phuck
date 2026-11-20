@@ -72,6 +72,31 @@ CkChainRunTest >> testGeneratedCodeCompiles [
 ]
 
 { #category : 'tests' }
+CkChainRunTest >> testImpulseAndBiQuadCompile [
+	"next and eqzs are real ChucK params (eqz is not)"
+
+	| imp filter |
+	imp := CkImpulse new.
+	filter := CkBiQuad new
+		          prad: 0.99;
+		          eqzs: 1;
+		          b0: 1;
+		          norm: 1;
+		          yourself.
+	self assertCompiles: (imp next: 1.0) => filter => CkDac new.
+	imp := CkImpulse new.
+	filter := CkBiQuad new
+		          prad: 0.99;
+		          eqzs: 1;
+		          yourself.
+	self assertCompiles: imp => filter => CkDac new , (CkShred loop: [ :t |
+				 (0 to: 30) do: [ :k |
+						 imp next: 1.0.
+						 filter pfreq: ((k / 10) sin abs * 400000) rounded / 100.0.
+						 t wait: 100 milliSeconds ] ])
+]
+
+{ #category : 'tests' }
 CkChainRunTest >> testLabelsAndSlidersCompile [
 
 	| volume |
