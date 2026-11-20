@@ -868,7 +868,7 @@ TurboPhuck class >> codeWithOSCSender [
 // Acid
 48    => global float acidNote;
 0     => global float acidGate;
-0.6   => global float acidGain;
+0.54   => global float acidGain;
 0.3   => global float acidCutoff;
 4.5   => global float acidResonance;
 0.64  => global float acidEnvMod;
@@ -898,7 +898,7 @@ TurboPhuck class >> codeWithOSCSender [
 // PsgPlus
 60   => global float psgPlusNote;
 0    => global float psgPlusGate;
-0.25 => global float psgPlusGain;
+0.23 => global float psgPlusGain;
 0    => global float psgPlusIndex;
 0    => global float psgPlusLfoAmount;
 180  => global float psgPlusDSFreq;
