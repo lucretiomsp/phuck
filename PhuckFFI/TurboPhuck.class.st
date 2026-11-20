@@ -1997,6 +1997,11 @@ TurboPhuck >> unloop [
 	self class tpPerf unloop
 ]
 
+{ #category : 'as yet unclassified' }
+TurboPhuck >> unloop: anInteger [ 
+	Performance uniqueInstance unloop: anInteger
+]
+
 { #category : 'playing' }
 TurboPhuck >> unmute: aSymbol [
 
