@@ -1,8 +1,8 @@
 "
-I test the Turbo rig (TurboLibrary, TurboMaster, TurboVoice and its subclasses, TurboRig) without sound: the generated ChucK is checked as text, and compiled in a PhuckVM offline when a test asks for vm. Sample folders are built in a memory file system, so the tests do not need TurboSamples.
+I test the Turbo rig (TurboLibrary, TurboMaster, TurboVoice and its subclasses, TurboPhuckRig) without sound: the generated ChucK is checked as text, and compiled in a PhuckVM offline when a test asks for vm. Sample folders are built in a memory file system, so the tests do not need TurboSamples.
 "
 Class {
-	#name : 'TurboRigTest',
+	#name : 'TurboPhuckRigTest',
 	#superclass : 'TestCase',
 	#instVars : [
 		'vm'
@@ -13,27 +13,27 @@ Class {
 }
 
 { #category : 'running' }
-TurboRigTest >> compile: aString [
+TurboPhuckRigTest >> compile: aString [
 	"compile signals 'ChucK compile error' when ChucK rejects the code"
 
 	self assert: (self vm compile: aString) > 0
 ]
 
 { #category : 'running' }
-TurboRigTest >> loadLibrary [
+TurboPhuckRigTest >> loadLibrary [
 
 	self compile: TurboLibrary new code.
 	self compile: TurboMaster new code
 ]
 
 { #category : 'running' }
-TurboRigTest >> rig [
+TurboPhuckRigTest >> rig [
 
-	^ TurboRig new root: self samplesRoot
+	^ TurboPhuckRig new root: self samplesRoot
 ]
 
 { #category : 'running' }
-TurboRigTest >> samplesRoot [
+TurboPhuckRigTest >> samplesRoot [
 	"kick: one-shots, breaks: a loop (bpm tag), hi-hat: a name to clean"
 
 	| root |
@@ -49,14 +49,14 @@ TurboRigTest >> samplesRoot [
 ]
 
 { #category : 'running' }
-TurboRigTest >> tearDown [
+TurboPhuckRigTest >> tearDown [
 
 	vm ifNotNil: [ vm releaseVM ].
 	super tearDown
 ]
 
 { #category : 'tests - code' }
-TurboRigTest >> testANewVoiceIsNotSporked [
+TurboPhuckRigTest >> testANewVoiceIsNotSporked [
 
 	| hoover |
 	hoover := TurboHoover new.
@@ -67,7 +67,7 @@ TurboRigTest >> testANewVoiceIsNotSporked [
 ]
 
 { #category : 'tests - vm' }
-TurboRigTest >> testAVoiceCanBeCompiledTwice [
+TurboPhuckRigTest >> testAVoiceCanBeCompiledTwice [
 	"play again swaps the code: a voice shred defines no class, only the library is public, so nothing clashes"
 
 	| hoover |
@@ -78,14 +78,14 @@ TurboRigTest >> testAVoiceCanBeCompiledTwice [
 ]
 
 { #category : 'tests - vm' }
-TurboRigTest >> testEveryVoiceCompiles [
+TurboPhuckRigTest >> testEveryVoiceCompiles [
 
 	self loadLibrary.
 	self rig voices do: [ :each | self compile: each code ]
 ]
 
 { #category : 'tests - code' }
-TurboRigTest >> testEveryVoiceDeclaresItsGlobalsAsFloat [
+TurboPhuckRigTest >> testEveryVoiceDeclaresItsGlobalsAsFloat [
 
 	self rig voices do: [ :voice |
 			| code |
@@ -94,7 +94,7 @@ TurboRigTest >> testEveryVoiceDeclaresItsGlobalsAsFloat [
 ]
 
 { #category : 'tests - code' }
-TurboRigTest >> testEveryVoicePlaysIntoTheMaster [
+TurboPhuckRigTest >> testEveryVoicePlaysIntoTheMaster [
 
 	self rig voices do: [ :voice |
 			| code |
@@ -105,14 +105,14 @@ TurboRigTest >> testEveryVoicePlaysIntoTheMaster [
 ]
 
 { #category : 'tests - code' }
-TurboRigTest >> testFolderNamesBecomeChuckNames [
+TurboPhuckRigTest >> testFolderNamesBecomeChuckNames [
 
 	self assert: (ZdSampler folder: self samplesRoot / 'hi-hat') name equals: 'hihat'.
 	self assert: (ZdSampler folder: self samplesRoot / 'kick' name: 'kick2') name equals: 'kick2'
 ]
 
 { #category : 'tests - code' }
-TurboRigTest >> testKick99PlaysAnOctaveDown [
+TurboPhuckRigTest >> testKick99PlaysAnOctaveDown [
 
 	| code |
 	code := TurboKick99 new code.
@@ -121,7 +121,7 @@ TurboRigTest >> testKick99PlaysAnOctaveDown [
 ]
 
 { #category : 'tests - vm' }
-TurboRigTest >> testLibraryCompilesOnlyOnce [
+TurboPhuckRigTest >> testLibraryCompilesOnlyOnce [
 
 	| library |
 	library := TurboLibrary new.
@@ -133,7 +133,7 @@ TurboRigTest >> testLibraryCompilesOnlyOnce [
 ]
 
 { #category : 'tests - code' }
-TurboRigTest >> testLibraryMakesEveryClassPublic [
+TurboPhuckRigTest >> testLibraryMakesEveryClassPublic [
 
 	| code |
 	code := TurboLibrary new code.
@@ -142,7 +142,7 @@ TurboRigTest >> testLibraryMakesEveryClassPublic [
 ]
 
 { #category : 'tests - code' }
-TurboRigTest >> testLibraryPutsSuperclassesFirst [
+TurboPhuckRigTest >> testLibraryPutsSuperclassesFirst [
 	"ZdFiles (ZdPlayer) must come before ZdSampler and ZdLoopPlayer, which use it"
 
 	| owners |
@@ -153,7 +153,7 @@ TurboRigTest >> testLibraryPutsSuperclassesFirst [
 ]
 
 { #category : 'tests - code' }
-TurboRigTest >> testLoopPlayerDoesNotResetTheTempo [
+TurboPhuckRigTest >> testLoopPlayerDoesNotResetTheTempo [
 	"performanceBPM belongs to the master: a loop declares it without a value"
 
 	| code |
@@ -163,7 +163,7 @@ TurboRigTest >> testLoopPlayerDoesNotResetTheTempo [
 ]
 
 { #category : 'tests - vm' }
-TurboRigTest >> testMasterCompiles [
+TurboPhuckRigTest >> testMasterCompiles [
 
 	self loadLibrary.
 	self assert: (self vm globalTypeOf: 'masterGain' ifAbsent: [ nil ]) equals: #float.
@@ -171,7 +171,7 @@ TurboRigTest >> testMasterCompiles [
 ]
 
 { #category : 'tests - code' }
-TurboRigTest >> testMoogKeepsItsSettings [
+TurboPhuckRigTest >> testMoogKeepsItsSettings [
 
 	| moog |
 	moog := TurboStk named: 'moog'.
@@ -182,7 +182,7 @@ TurboRigTest >> testMoogKeepsItsSettings [
 ]
 
 { #category : 'tests - code' }
-TurboRigTest >> testParametersCarryTheVoiceName [
+TurboPhuckRigTest >> testParametersCarryTheVoiceName [
 
 	self assert: ((TurboStk named: 'bell') parameter: 'Gate') equals: 'bellGate'.
 	self assert: (TurboAcid new parameter: 'Cutoff') equals: 'acidCutoff'.
@@ -190,7 +190,7 @@ TurboRigTest >> testParametersCarryTheVoiceName [
 ]
 
 { #category : 'tests - code' }
-TurboRigTest >> testRelativeFolderStartsAtTheImage [
+TurboPhuckRigTest >> testRelativeFolderStartsAtTheImage [
 
 	self
 		assert: (ZdSampler folder: 'TurboSamples/kick') folder
@@ -198,7 +198,7 @@ TurboRigTest >> testRelativeFolderStartsAtTheImage [
 ]
 
 { #category : 'tests - code' }
-TurboRigTest >> testRigHasTheOldVoiceNames [
+TurboPhuckRigTest >> testRigHasTheOldVoiceNames [
 
 	| names |
 	names := self rig names.
@@ -209,7 +209,7 @@ TurboRigTest >> testRigHasTheOldVoiceNames [
 ]
 
 { #category : 'tests - code' }
-TurboRigTest >> testRigPicksThePlayerOfEachFolder [
+TurboPhuckRigTest >> testRigPicksThePlayerOfEachFolder [
 
 	| rig |
 	rig := self rig.
@@ -219,23 +219,23 @@ TurboRigTest >> testRigPicksThePlayerOfEachFolder [
 ]
 
 { #category : 'tests - code' }
-TurboRigTest >> testRigRefusesTwoVoicesWithOneName [
+TurboPhuckRigTest >> testRigRefusesTwoVoicesWithOneName [
 	"a sample folder called bell would share its globals with the STK bell"
 
 	| root |
 	root := self samplesRoot.
 	(root / 'bell') ensureCreateDirectory.
-	self should: [ (TurboRig new root: root) voices ] raise: Error
+	self should: [ (TurboPhuckRig new root: root) voices ] raise: Error
 ]
 
 { #category : 'tests - code' }
-TurboRigTest >> testTickTakesOneArgumentPerGlobal [
+TurboPhuckRigTest >> testTickTakesOneArgumentPerGlobal [
 
 	self rig voices do: [ :voice | self assert: voice tickArguments size equals: voice globals size + voice sharedGlobals size ]
 ]
 
 { #category : 'tests - vm' }
-TurboRigTest >> testVoiceGlobalsAreRegisteredAsFloat [
+TurboPhuckRigTest >> testVoiceGlobalsAreRegisteredAsFloat [
 	"so setValue:parameter: sends floats, also for Index and Gate"
 
 	self loadLibrary.
@@ -245,7 +245,7 @@ TurboRigTest >> testVoiceGlobalsAreRegisteredAsFloat [
 ]
 
 { #category : 'running' }
-TurboRigTest >> vm [
+TurboPhuckRigTest >> vm [
 	"a VM without sound card, booted only by the tests that compile"
 
 	^ vm ifNil: [ vm := PhuckVM offline ]

@@ -5,8 +5,8 @@ A public class cannot be defined twice in a running VM. After changing a chuckCl
 
 ```language=Pharo
 	PhuckVM reset.
-	TurboRig reset.
-	TurboRig start.
+	TurboPhuckRig reset.
+	TurboPhuckRig start.
 ```
 isLoaded asks the VM, by compiling a reference to TurboOsc.
 "

@@ -2,17 +2,17 @@
 I am the whole Turbo instrument as small shreds: the twelve STK instruments, the seven synths and one ZdSampler or ZdLoopPlayer per folder of TurboSamples, with the global names of the old TurboPhuck code.
 
 ```language=Pharo
-	TurboRig start.
+	TurboPhuckRig start.
 	TurboPhuck new.	""Coypu as before""
-	(TurboRig default at: 'kick') trig.
-	(TurboRig default at: 'acid') cutoff: 0.6; trig: 0.3.
-	TurboRig default sporked.
-	TurboRig stop.
+	(TurboPhuckRig default at: 'kick') trig.
+	(TurboPhuckRig default at: 'acid') cutoff: 0.6; trig: 0.3.
+	TurboPhuckRig default sporked.
+	TurboPhuckRig stop.
 ```
-start connects Coypu through TurboPhuck class>>connectPerformanceTo:, like the old TurboPhuck start. On a fresh VM (PhuckVM reset, old TurboPhuck start, image restart) start forgets the old shreds and sporks everything anew. TurboRig reset forgets everything. A new sample folder: TurboRig default root: aFolder, or TurboRig reset.
+start connects Coypu through TurboPhuck class>>connectPerformanceTo:, like the old TurboPhuck start. On a fresh VM (PhuckVM reset, old TurboPhuck start, image restart) start forgets the old shreds and sporks everything anew. TurboPhuckRig reset forgets everything. A new sample folder: TurboPhuckRig default root: aFolder, or TurboPhuckRig reset.
 "
 Class {
-	#name : 'TurboRig',
+	#name : 'TurboPhuckRig',
 	#superclass : 'Object',
 	#instVars : [
 		'root',
@@ -27,13 +27,13 @@ Class {
 }
 
 { #category : 'instance creation' }
-TurboRig class >> default [
+TurboPhuckRig class >> default [
 
 	^ default ifNil: [ default := self new ]
 ]
 
 { #category : 'instance creation' }
-TurboRig class >> reset [
+TurboPhuckRig class >> reset [
 	"after PhuckVM reset: the VM has forgotten the library, the master and every shred"
 
 	default := nil.
@@ -42,26 +42,26 @@ TurboRig class >> reset [
 ]
 
 { #category : 'instance creation' }
-TurboRig class >> start [
+TurboPhuckRig class >> start [
 
 	^ self default start
 ]
 
 { #category : 'instance creation' }
-TurboRig class >> stop [
+TurboPhuckRig class >> stop [
 
 	^ self default stop
 ]
 
 { #category : 'accessing' }
-TurboRig >> at: aName [
+TurboPhuckRig >> at: aName [
 	"the voice whose globals start with aName: kick, hoover, bell ..."
 
 	^ self voices detect: [ :each | each name = aName ] ifNone: [ self error: 'no voice named ' , aName ]
 ]
 
 { #category : 'accessing' }
-TurboRig >> buildVoices [
+TurboPhuckRig >> buildVoices [
 
 	| codegen all names |
 	codegen := TurboSampleCodegen new root: self root.
@@ -87,34 +87,34 @@ TurboRig >> buildVoices [
 ]
 
 { #category : 'accessing' }
-TurboRig >> names [
+TurboPhuckRig >> names [
 
 	^ self voices collect: [ :each | each name ]
 ]
 
 { #category : 'accessing' }
-TurboRig >> root [
+TurboPhuckRig >> root [
 	"the sample folders, one ZdSampler or ZdLoopPlayer each"
 
 	^ root ifNil: [ root := (FileLocator imageDirectory / 'TurboSamples') asFileReference ]
 ]
 
 { #category : 'accessing' }
-TurboRig >> root: aFileReference [
+TurboPhuckRig >> root: aFileReference [
 
 	root := aFileReference.
 	voices := nil
 ]
 
 { #category : 'running' }
-TurboRig >> sporked [
+TurboPhuckRig >> sporked [
 	"the voices whose shred runs"
 
 	^ self voices select: [ :each | each isSporked ]
 ]
 
 { #category : 'running' }
-TurboRig >> start [
+TurboPhuckRig >> start [
 	"library, master, then one shred per voice; Coypu then plays through the rig like through the old TurboPhuck.
 	A VM without the library is a fresh one (PhuckVM reset, old TurboPhuck start, image restart): the shreds I knew are gone"
 
@@ -129,7 +129,7 @@ TurboRig >> start [
 ]
 
 { #category : 'running' }
-TurboRig >> stop [
+TurboPhuckRig >> stop [
 	"unspork every voice and the master; the library stays compiled in the VM"
 
 	self voices do: [ :each | each unspork ].
@@ -137,13 +137,13 @@ TurboRig >> stop [
 ]
 
 { #category : 'accessing' }
-TurboRig >> vm [
+TurboPhuckRig >> vm [
 
 	^ PhuckVM uniqueInstance
 ]
 
 { #category : 'accessing' }
-TurboRig >> voices [
+TurboPhuckRig >> voices [
 	"the STK instruments, the synths, then one player per sample folder, with the global names of the old TurboPhuck code"
 
 	^ voices ifNil: [ voices := self buildVoices ]
