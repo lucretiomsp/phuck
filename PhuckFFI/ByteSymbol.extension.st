@@ -2,6 +2,7 @@ Extension { #name : 'ByteSymbol' }
 
 { #category : '*PhuckFFI' }
 ByteSymbol >> send: aNumber to: aStringWIthFxName [
+
 	(TurboPhuckRig default at: self asString ) send: aNumber to: aStringWIthFxName .
 ]
 
