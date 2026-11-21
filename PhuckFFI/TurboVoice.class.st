@@ -56,6 +56,13 @@ TurboVoice class >> named: aString [
 ]
 
 { #category : 'chuck code' }
+TurboVoice >> auxes [
+	"the aux buses I send into, one send level each"
+
+	^ TurboAux all
+]
+
+{ #category : 'chuck code' }
 TurboVoice >> chuckType [
 	"the ChucK class I play, from TurboLibrary"
 
@@ -64,7 +71,7 @@ TurboVoice >> chuckType [
 
 { #category : 'chuck code' }
 TurboVoice >> code [
-	"my shred: my globals, my player into the master bus, a 1 ms loop calling tick and sending the OSC event"
+	"my shred: my globals, my player into the master bus and one send per aux, a 1 ms loop calling tick and sending the OSC event"
 
 	^ String streamContents: [ :stream |
 			  self globals do: [ :each |
@@ -72,6 +79,12 @@ TurboVoice >> code [
 						  print: each value;
 						  << ' => global float ';
 						  << (self parameter: each key);
+						  << ';';
+						  cr ].
+			  self auxes do: [ :each |
+					  stream
+						  << '0 => global float ';
+						  << (self sendParameterFor: each);
 						  << ';';
 						  cr ].
 			  self sharedGlobals do: [ :each |
@@ -83,6 +96,12 @@ TurboVoice >> code [
 			  stream
 				  << 'global Gain master;';
 				  cr.
+			  self auxes do: [ :each |
+					  stream
+						  << 'global Gain ';
+						  << each bus;
+						  << ';';
+						  cr ].
 			  self setupCode ifNotEmpty: [ :setup |
 					  stream
 						  << setup;
@@ -91,6 +110,14 @@ TurboVoice >> code [
 				  << self declaration;
 				  << ' => master;';
 				  cr.
+			  self auxes do: [ :each |
+					  stream
+						  << 'v => Gain ';
+						  << (self sendGainFor: each);
+						  << ' => ';
+						  << each bus;
+						  << ';';
+						  cr ].
 			  stream
 				  << 'TurboOsc event("';
 				  << self name;
@@ -114,6 +141,14 @@ TurboVoice >> code [
 				  << self eventNote;
 				  << ');';
 				  cr.
+			  self auxes do: [ :each |
+					  stream
+						  << '    ';
+						  << (self sendParameterFor: each);
+						  << ' => ';
+						  << (self sendGainFor: each);
+						  << '.gain;';
+						  cr ].
 			  stream
 				  << '}';
 				  cr ]
@@ -200,9 +235,32 @@ TurboVoice >> prepare [
 
 	TurboLibrary default isLoaded ifFalse: [
 			TurboMaster default forgetShred.
+			self auxes do: [ :each | each forgetShred ].
 			self forgetShred.
 			TurboLibrary default spork ].
-	TurboMaster default isSporked ifFalse: [ TurboMaster default spork ]
+	TurboMaster default isSporked ifFalse: [ TurboMaster default spork ].
+	self auxes do: [ :each | each isSporked ifFalse: [ each spork ] ]
+]
+
+{ #category : 'parameters' }
+TurboVoice >> send: aNumber to: anAuxName [
+	"my send level into the aux called anAuxName: hoover send: 0.4 to: 'delay'"
+
+	self vm setValue: aNumber parameter: (self sendParameterFor: (TurboAux named: anAuxName))
+]
+
+{ #category : 'chuck code' }
+TurboVoice >> sendGainFor: anAux [
+	"the local Gain of my shred feeding the bus of anAux: toDelay"
+
+	^ 'to' , anAux name capitalized
+]
+
+{ #category : 'chuck code' }
+TurboVoice >> sendParameterFor: anAux [
+	"the ChucK global of my send level into anAux: hooverDelaySend"
+
+	^ self parameter: anAux sendSuffix
 ]
 
 { #category : 'parameters' }

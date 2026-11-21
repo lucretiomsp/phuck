@@ -77,6 +77,56 @@ TurboPhuckRigTest >> testAVoiceCanBeCompiledTwice [
 	self compile: hoover code
 ]
 
+{ #category : 'tests - code' }
+TurboPhuckRigTest >> testAuxesAreTheConcreteSubclasses [
+
+	self assert: (TurboAux all includes: TurboDelay default).
+	self deny: (TurboAux all anySatisfy: [ :each | each class == TurboAux ]).
+	self assert: (TurboAux named: 'delay') identicalTo: TurboDelay default.
+	self assert: (self rig auxAt: 'delay') identicalTo: TurboDelay default.
+	self should: [ TurboAux named: 'nothing' ] raise: Error
+]
+
+{ #category : 'tests - vm' }
+TurboPhuckRigTest >> testDelayCompiles [
+
+	self loadLibrary.
+	self compile: TurboDelay new code.
+	#( 'delayTime' 'delayFeedback' 'delayTone' 'delayReturn' ) do: [ :each |
+		self assert: (self vm globalTypeOf: each ifAbsent: [ nil ]) equals: #float ]
+]
+
+{ #category : 'tests - code' }
+TurboPhuckRigTest >> testDelayIsAtMostOneSecond [
+	"the ranges of the knobs are clamped in ChucK too"
+
+	| delay code |
+	delay := TurboDelay new.
+	code := delay code.
+	self assert: (delay maxOf: 'Time') equals: 1.0.
+	self assert: (code includesSubstring: '1.0::second => d.max;').
+	self assert: (code includesSubstring: 'Math.max(0.01, Math.min(1.0, delayTime))::second => d.delay;').
+	self assert: (code includesSubstring: 'Math.max(0.0, Math.min(0.95, delayFeedback)) => fb.gain;').
+	delay globals do: [ :each |
+			| range |
+			range := delay ranges at: each key.
+			self assert: (each value between: range first and: range second) ]
+]
+
+{ #category : 'tests - code' }
+TurboPhuckRigTest >> testDelayPlaysItsBusIntoTheMaster [
+
+	| delay code |
+	delay := TurboDelay new.
+	code := delay code.
+	self assert: delay bus equals: 'delayBus'.
+	self assert: delay sendSuffix equals: 'DelaySend'.
+	self assert: (code includesSubstring: 'global Gain delayBus;').
+	self assert: (code includesSubstring: 'delayBus => Gain in;').
+	self assert: (code includesSubstring: 'Gain ret => master;').
+	delay globals do: [ :each | self assert: (code includesSubstring: ' => global float delay' , each key , ';') ]
+]
+
 { #category : 'tests - vm' }
 TurboPhuckRigTest >> testEveryVoiceCompiles [
 
@@ -102,6 +152,24 @@ TurboPhuckRigTest >> testEveryVoicePlaysIntoTheMaster [
 			self assert: (code includesSubstring: 'global Gain master;').
 			self assert: (code includesSubstring: voice declaration , ' => master;').
 			self assert: (code includesSubstring: 'TurboOsc event("' , voice name , '");') ]
+]
+
+{ #category : 'tests - code' }
+TurboPhuckRigTest >> testEveryVoiceSendsIntoEachAux [
+	"a send starts at 0 and is not a tick argument"
+
+	self rig voices do: [ :voice |
+			| code |
+			code := voice code.
+			voice auxes do: [ :aux |
+					| send |
+					send := voice sendParameterFor: aux.
+					self assert: (code includesSubstring: '0 => global float ' , send , ';').
+					self assert: (code includesSubstring: 'global Gain ' , aux bus , ';').
+					self assert: (code includesSubstring: 'v => Gain ' , (voice sendGainFor: aux) , ' => ' , aux bus , ';').
+					self assert: (code includesSubstring: send , ' => ' , (voice sendGainFor: aux) , '.gain;').
+					self deny: (voice tickArguments includes: send) ] ].
+	self assert: (TurboHoover new sendParameterFor: TurboDelay default) equals: 'hooverDelaySend'
 ]
 
 { #category : 'tests - code' }
@@ -226,6 +294,20 @@ TurboPhuckRigTest >> testRigRefusesTwoVoicesWithOneName [
 	root := self samplesRoot.
 	(root / 'bell') ensureCreateDirectory.
 	self should: [ (TurboPhuckRig new root: root) voices ] raise: Error
+]
+
+{ #category : 'tests - vm' }
+TurboPhuckRigTest >> testSendLevelsAreRegisteredAsFloat [
+	"a voice and the delay compiled in either order share the bus"
+
+	| hoover |
+	self loadLibrary.
+	hoover := TurboHoover new.
+	self compile: hoover code.
+	self compile: TurboDelay new code.
+	self compile: TurboAcid new code.
+	self assert: (self vm globalTypeOf: 'hooverDelaySend' ifAbsent: [ nil ]) equals: #float.
+	self assert: (self vm globalTypeOf: 'acidDelaySend' ifAbsent: [ nil ]) equals: #float
 ]
 
 { #category : 'tests - code' }

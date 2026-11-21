@@ -38,7 +38,8 @@ TurboPhuckRig class >> reset [
 
 	default := nil.
 	TurboLibrary reset.
-	TurboMaster reset
+	TurboMaster reset.
+	TurboAux reset
 ]
 
 { #category : 'instance creation' }
@@ -58,6 +59,20 @@ TurboPhuckRig >> at: aName [
 	"the voice whose globals start with aName: kick, hoover, bell ..."
 
 	^ self voices detect: [ :each | each name = aName ] ifNone: [ self error: 'no voice named ' , aName ]
+]
+
+{ #category : 'accessing' }
+TurboPhuckRig >> auxAt: aName [
+	"the aux bus called aName: delay"
+
+	^ TurboAux named: aName
+]
+
+{ #category : 'accessing' }
+TurboPhuckRig >> auxes [
+	"the effects on aux buses every voice sends into: TurboDelay ..."
+
+	^ TurboAux all
 ]
 
 { #category : 'accessing' }
@@ -115,24 +130,27 @@ TurboPhuckRig >> sporked [
 
 { #category : 'running' }
 TurboPhuckRig >> start [
-	"library, master, then one shred per voice; Coypu then plays through the rig like through the old TurboPhuck.
+	"library, master, the auxes, then one shred per voice; Coypu then plays through the rig like through the old TurboPhuck.
 	A VM without the library is a fresh one (PhuckVM reset, old TurboPhuck start, image restart): the shreds I knew are gone"
 
 	self vm isRunning ifFalse: [ self vm start ].
 	TurboLibrary default isLoaded ifFalse: [
 			TurboMaster default forgetShred.
+			self auxes do: [ :each | each forgetShred ].
 			self voices do: [ :each | each forgetShred ].
 			TurboLibrary default spork ].
 	TurboMaster default isSporked ifFalse: [ TurboMaster default spork ].
+	self auxes do: [ :each | each isSporked ifFalse: [ each spork ] ].
 	self voices do: [ :each | each isSporked ifFalse: [ each spork ] ].
 	TurboPhuck connectPerformanceTo: self vm
 ]
 
 { #category : 'running' }
 TurboPhuckRig >> stop [
-	"unspork every voice and the master; the library stays compiled in the VM"
+	"unspork every voice, the auxes and the master; the library stays compiled in the VM"
 
 	self voices do: [ :each | each unspork ].
+	self auxes do: [ :each | each unspork ].
 	TurboMaster default unspork
 ]
 
